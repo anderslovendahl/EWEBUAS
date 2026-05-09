@@ -347,16 +347,16 @@ const printPreFlight = (mission, ac, pilot, checklist, checked, notams) => {
   if (!win) return;
   win.document.write(`<!DOCTYPE html><html><head><title>Pre-Flight Record</title>
   <style>body{font-family:monospace;background:#fff;color:#111;padding:32px;font-size:12px;}
-  h1{font-size:16px;margin:0 0 4px;}.sub{color:#555;font-size:11px;margin-bottom:24px;}
+  h1{font-size:16px;margin:0 0 4px;}.sub{color:#555;font-size:13px;margin-bottom:24px;}
   .meta{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;background:#f5f5f5;padding:16px;border-radius:6px;margin-bottom:24px;}
-  .ml{font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:#777;margin-bottom:3px;}.mv{font-size:12px;font-weight:700;}
-  .cat{font-size:9px;text-transform:uppercase;color:#555;margin:18px 0 6px;font-weight:700;border-bottom:1px solid #ddd;padding-bottom:4px;}
+  .ml{font-size:13px;text-transform:uppercase;letter-spacing:0.1em;color:#777;margin-bottom:3px;}.mv{font-size:12px;font-weight:700;}
+  .cat{font-size:13px;text-transform:uppercase;color:#555;margin:18px 0 6px;font-weight:700;border-bottom:1px solid #ddd;padding-bottom:4px;}
   .item{display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid #f0f0f0;}
   .box{width:14px;height:14px;border:1.5px solid #ccc;border-radius:3px;flex-shrink:0;}
   .checked{border-color:#10B981;background:#10B981;}
-  .notam{background:#fffbf0;border:1px solid #e5d087;border-radius:6px;padding:14px;margin-top:20px;white-space:pre-wrap;font-size:11px;line-height:1.6;}
+  .notam{background:#fffbf0;border:1px solid #e5d087;border-radius:6px;padding:14px;margin-top:20px;white-space:pre-wrap;font-size:13px;line-height:1.6;}
   .footer{margin-top:32px;padding-top:16px;border-top:1px solid #ddd;display:grid;grid-template-columns:1fr 1fr 1fr;gap:32px;}
-  .sig{border-top:1px solid #000;padding-top:6px;font-size:10px;color:#777;}</style>
+  .sig{border-top:1px solid #000;padding-top:6px;font-size:12px;color:#777;}</style>
   </head><body>
   <h1>EWEB UAS OPS — Pre-Flight Record</h1>
   <div class="sub">Printed: ${now} | ${done}/${total} complete</div>
@@ -396,17 +396,17 @@ const printMissionBriefing = (mission, ac, pilot, crew, pilots, orgUsers, missio
   }).join('');
   const rl = mission.riskScore != null ? getRiskLevel(mission.riskScore) : null;
   win.document.write(`<!DOCTYPE html><html><head><title>Mission Briefing — ${mission.name}</title>
-  <style>body{font-family:monospace;background:#fff;color:#111;padding:32px;font-size:11px;line-height:1.5;}
+  <style>body{font-family:monospace;background:#fff;color:#111;padding:32px;font-size:13px;line-height:1.5;}
   h1{font-size:18px;margin:0 0 4px;}h2{font-size:13px;margin:18px 0 6px;text-transform:uppercase;border-bottom:2px solid #000;padding-bottom:4px;letter-spacing:0.05em;}
-  .sub{color:#555;font-size:10px;margin-bottom:24px;}
+  .sub{color:#555;font-size:12px;margin-bottom:24px;}
   .meta{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;background:#f5f5f5;padding:14px;border-radius:6px;margin-bottom:18px;}
-  .ml{font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:#777;margin-bottom:2px;}.mv{font-size:12px;font-weight:700;}
-  table{width:100%;border-collapse:collapse;margin:8px 0;}th,td{padding:6px 10px;text-align:left;border-bottom:1px solid #ddd;font-size:11px;}th{background:#f5f5f5;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:#555;}
-  .risk-${rl?.label.toLowerCase()||'na'}{display:inline-block;padding:3px 10px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:0.1em;}
+  .ml{font-size:13px;text-transform:uppercase;letter-spacing:0.1em;color:#777;margin-bottom:2px;}.mv{font-size:12px;font-weight:700;}
+  table{width:100%;border-collapse:collapse;margin:8px 0;}th,td{padding:6px 10px;text-align:left;border-bottom:1px solid #ddd;font-size:13px;}th{background:#f5f5f5;font-size:13px;text-transform:uppercase;letter-spacing:0.1em;color:#555;}
+  .risk-${rl?.label.toLowerCase()||'na'}{display:inline-block;padding:3px 10px;border-radius:4px;font-size:12px;font-weight:700;letter-spacing:0.1em;}
   .risk-low{background:#dcfce7;color:#166534;}.risk-medium{background:#fef3c7;color:#92400e;}.risk-high{background:#ffedd5;color:#9a3412;}.risk-critical{background:#fee2e2;color:#991b1b;}
-  .body{font-size:11px;line-height:1.6;background:#fafafa;border:1px solid #eee;border-radius:4px;padding:12px;white-space:pre-wrap;}
+  .body{font-size:13px;line-height:1.6;background:#fafafa;border:1px solid #eee;border-radius:4px;padding:12px;white-space:pre-wrap;}
   .footer{margin-top:32px;padding-top:16px;border-top:2px solid #000;display:grid;grid-template-columns:1fr 1fr 1fr;gap:32px;}
-  .sig{border-top:1px solid #000;padding-top:6px;font-size:9px;color:#777;}
+  .sig{border-top:1px solid #000;padding-top:6px;font-size:13px;color:#777;}
   </style></head><body>
   <h1>EWEB UAS OPS — Mission Briefing Document</h1>
   <div class="sub">Generated: ${now} · Mission ID: ${mission.id}</div>
@@ -443,13 +443,13 @@ const printIncident = (inc, pilotName, acTail) => {
   if (!win) return;
   win.document.write(`<!DOCTYPE html><html><head><title>Incident Report</title>
   <style>body{font-family:monospace;background:#fff;color:#111;padding:32px;font-size:12px;}
-  h1{font-size:16px;margin:0 0 4px;}.sub{color:#555;font-size:11px;margin-bottom:24px;}
+  h1{font-size:16px;margin:0 0 4px;}.sub{color:#555;font-size:13px;margin-bottom:24px;}
   .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;background:#f5f5f5;padding:16px;border-radius:6px;margin-bottom:24px;}
-  .lbl{font-size:9px;text-transform:uppercase;color:#777;margin-bottom:3px;}.val{font-size:12px;font-weight:700;}
-  .sec{font-size:11px;text-transform:uppercase;color:#555;border-bottom:1px solid #ddd;padding-bottom:4px;margin:20px 0 8px;font-weight:700;}
+  .lbl{font-size:13px;text-transform:uppercase;color:#777;margin-bottom:3px;}.val{font-size:12px;font-weight:700;}
+  .sec{font-size:13px;text-transform:uppercase;color:#555;border-bottom:1px solid #ddd;padding-bottom:4px;margin:20px 0 8px;font-weight:700;}
   .body{font-size:12px;line-height:1.7;background:#fafafa;border:1px solid #eee;border-radius:4px;padding:14px;white-space:pre-wrap;}
   .footer{margin-top:32px;padding-top:16px;border-top:1px solid #ddd;display:grid;grid-template-columns:1fr 1fr;gap:32px;}
-  .sig{border-top:1px solid #000;padding-top:6px;font-size:10px;color:#777;}</style>
+  .sig{border-top:1px solid #000;padding-top:6px;font-size:12px;color:#777;}</style>
   </head><body>
   <h1>EWEB UAS OPS — Incident Report</h1>
   <div class="sub">Generated: ${now} | Status: ${inc.status}</div>
@@ -475,10 +475,10 @@ const printIncident = (inc, pilotName, acTail) => {
 };
 
 const C = {
-  bg:'#090C12', card:'#0F1520', card2:'#141B28', border:'#1C2438', border2:'#263147',
-  amber:'#F59E0B', green:'#10B981', red:'#EF4444', blue:'#60A5FA', purple:'#A78BFA',
-  teal:'#2DD4BF', orange:'#FB923C', text:'#E2E8F0', mid:'#94A3B8', dim:'#475569',
-  mono:"'Space Mono','Courier New',monospace", sans:"'DM Sans',system-ui,sans-serif",
+  bg:'#0B1020', card:'#141B2D', card2:'#1A2236', border:'#2A3550', border2:'#3A4868',
+  amber:'#FBBF24', green:'#34D399', red:'#F87171', blue:'#60A5FA', purple:'#C084FC',
+  teal:'#5EEAD4', orange:'#FB923C', text:'#F1F5F9', mid:'#CBD5E1', dim:'#94A3B8',
+  mono:"'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif", sans:"'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif", code:"'JetBrains Mono','SF Mono','Monaco',monospace",
 };
 const SCOL = {
   airworthy:C.green, maintenance:C.amber, grounded:C.red,
@@ -583,7 +583,7 @@ function calcRisk(mission, pilot, aircraft, wx) {
 function Badge({ status, label }) {
   const col = SCOL[status] || C.dim;
   return (
-    <span style={{ display:'inline-flex', alignItems:'center', gap:4, background:col+'18', border:`1px solid ${col}44`, color:col, borderRadius:4, padding:'2px 8px', fontSize:10, fontFamily:C.mono, letterSpacing:'0.08em', textTransform:'uppercase', fontWeight:700, whiteSpace:'nowrap' }}>
+    <span style={{ display:'inline-flex', alignItems:'center', gap:4, background:col+'18', border:`1px solid ${col}44`, color:col, borderRadius:4, padding:'2px 8px', fontSize:12, fontFamily:C.mono, letterSpacing:'0.08em', textTransform:'uppercase', fontWeight:700, whiteSpace:'nowrap' }}>
       <span style={{ width:4, height:4, borderRadius:'50%', background:col, flexShrink:0 }}/>{label || status}
     </span>
   );
@@ -595,19 +595,19 @@ function StatCard({ label, value, sub, accent }) {
   return (
     <Card style={{ padding:'18px 20px', position:'relative', overflow:'hidden' }}>
       <div style={{ position:'absolute', top:0, left:0, width:3, height:'100%', background:accent||C.amber, borderRadius:'4px 0 0 4px' }}/>
-      <div style={{ fontSize:10, color:C.dim, fontFamily:C.mono, letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:8 }}>{label}</div>
+      <div style={{ fontSize:12, color:C.dim, fontFamily:C.mono, letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:8 }}>{label}</div>
       <div style={{ fontSize:26, fontWeight:700, fontFamily:C.mono, color:C.text, letterSpacing:'-0.02em', lineHeight:1 }}>{value}</div>
-      {sub && <div style={{ fontSize:11, color:C.mid, marginTop:5 }}>{sub}</div>}
+      {sub && <div style={{ fontSize:13, color:C.mid, marginTop:5 }}>{sub}</div>}
     </Card>
   );
 }
 function SectionHeader({ title, extra, onAdd, addLabel }) {
   return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-      <h2 style={{ fontSize:11, fontFamily:C.mono, color:C.amber, letterSpacing:'0.14em', textTransform:'uppercase', margin:0 }}>{title}</h2>
+      <h2 style={{ fontSize:13, fontFamily:C.mono, color:C.amber, letterSpacing:'0.14em', textTransform:'uppercase', margin:0 }}>{title}</h2>
       <div style={{ display:'flex', gap:8 }}>
         {extra}
-        {onAdd && <button onClick={onAdd} style={{ background:'transparent', border:`1px solid ${C.amber}`, color:C.amber, borderRadius:5, padding:'6px 14px', fontSize:11, fontFamily:C.mono, cursor:'pointer' }}>{addLabel || '+ Add'}</button>}
+        {onAdd && <button onClick={onAdd} style={{ background:'transparent', border:`1px solid ${C.amber}`, color:C.amber, borderRadius:5, padding:'6px 14px', fontSize:13, fontFamily:C.mono, cursor:'pointer' }}>{addLabel || '+ Add'}</button>}
       </div>
     </div>
   );
@@ -616,7 +616,7 @@ function DataTable({ headers, rows }) {
   return (
     <div style={{ overflowX:'auto' }}>
       <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
-        <thead><tr>{headers.map((h, i) => <th key={i} style={{ padding:'9px 14px', textAlign:'left', fontSize:10, fontFamily:C.mono, color:C.dim, letterSpacing:'0.1em', textTransform:'uppercase', borderBottom:`1px solid ${C.border}`, whiteSpace:'nowrap' }}>{h}</th>)}</tr></thead>
+        <thead><tr>{headers.map((h, i) => <th key={i} style={{ padding:'9px 14px', textAlign:'left', fontSize:12, fontFamily:C.mono, color:C.dim, letterSpacing:'0.1em', textTransform:'uppercase', borderBottom:`1px solid ${C.border}`, whiteSpace:'nowrap' }}>{h}</th>)}</tr></thead>
         <tbody>
           {rows.map((row, ri) => (<tr key={ri} style={{ borderBottom:`1px solid ${C.border}20` }}>{row.map((cell, ci) => <td key={ci} style={{ padding:'10px 14px', color:C.mid, verticalAlign:'middle' }}>{cell}</td>)}</tr>))}
           {!rows.length && (<tr><td colSpan={headers.length} style={{ padding:32, textAlign:'center', color:C.dim, fontFamily:C.mono, fontSize:11 }}>No records</td></tr>)}
@@ -626,7 +626,7 @@ function DataTable({ headers, rows }) {
   );
 }
 function Field({ label, children }) {
-  return (<div style={{ marginBottom:12 }}><label style={{ display:'block', fontSize:10, fontFamily:C.mono, color:C.dim, letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:5 }}>{label}</label>{children}</div>);
+  return (<div style={{ marginBottom:12 }}><label style={{ display:'block', fontSize:12, fontFamily:C.mono, color:C.dim, letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:5 }}>{label}</label>{children}</div>);
 }
 function Btn({ onClick, children, variant = 'ghost', disabled, xstyle }) {
   const styles = {
@@ -641,7 +641,7 @@ function Btn({ onClick, children, variant = 'ghost', disabled, xstyle }) {
     orange:  { background:'transparent', color:C.orange, border:`1px solid ${C.orange}` },
   };
   return (
-    <button onClick={onClick} disabled={disabled} style={{ ...styles[variant], borderRadius:5, padding:'7px 14px', fontSize:11, fontFamily:C.mono, letterSpacing:'0.04em', fontWeight: variant==='primary' ? 700 : 400, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1, ...xstyle }}>{children}</button>
+    <button onClick={onClick} disabled={disabled} style={{ ...styles[variant], borderRadius:5, padding:'7px 14px', fontSize:13, fontFamily:C.mono, letterSpacing:'0.04em', fontWeight: variant==='primary' ? 700 : 400, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1, ...xstyle }}>{children}</button>
   );
 }
 function Modal({ title, onClose, children, wide }) {
@@ -649,7 +649,7 @@ function Modal({ title, onClose, children, wide }) {
     <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.82)', display:'flex', alignItems:'flex-start', justifyContent:'center', zIndex:200, paddingTop:60, paddingLeft:16, paddingRight:16 }}>
       <div style={{ background:C.card2, border:`1px solid ${C.border2}`, borderRadius:10, width:'100%', maxWidth: wide ? 660 : 520, maxHeight:'84vh', overflowY:'auto' }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'15px 20px', borderBottom:`1px solid ${C.border}`, position:'sticky', top:0, background:C.card2 }}>
-          <span style={{ fontFamily:C.mono, fontSize:11, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase' }}>{title}</span>
+          <span style={{ fontFamily:C.mono, fontSize:13, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase' }}>{title}</span>
           <button onClick={onClose} style={{ background:'none', border:'none', color:C.dim, fontSize:20, cursor:'pointer', lineHeight:1 }}>x</button>
         </div>
         <div style={{ padding:20 }}>{children}</div>
@@ -667,8 +667,8 @@ function ConfirmModal({ message, label, onConfirm, onCancel }) {
           </div>
           <div>
             <div style={{ fontSize:13, fontWeight:600, color:C.text, marginBottom:4 }}>{message}</div>
-            {label && <div style={{ fontSize:11, color:C.dim, fontFamily:C.mono, background:C.card, border:`1px solid ${C.border}`, borderRadius:4, padding:'4px 10px', display:'inline-block' }}>{label}</div>}
-            <div style={{ fontSize:11, color:C.dim, marginTop:8 }}>This action cannot be undone.</div>
+            {label && <div style={{ fontSize:13, color:C.dim, fontFamily:C.mono, background:C.card, border:`1px solid ${C.border}`, borderRadius:4, padding:'4px 10px', display:'inline-block' }}>{label}</div>}
+            <div style={{ fontSize:13, color:C.dim, marginTop:8 }}>This action cannot be undone.</div>
           </div>
         </div>
         <div style={{ display:'flex', justifyContent:'flex-end', gap:8 }}><Btn onClick={onCancel}>Cancel</Btn><Btn variant='red' onClick={onConfirm}>Delete</Btn></div>
@@ -690,7 +690,7 @@ function PermDenied({ action }) {
       <svg width="32" height="32" viewBox="0 0 32 32" fill="none" style={{ marginBottom:12 }}><circle cx="16" cy="16" r="13" stroke={C.red} strokeWidth="1.5"/><line x1="10" y1="16" x2="22" y2="16" stroke={C.red} strokeWidth="2" strokeLinecap="round"/></svg>
       <div style={{ fontSize:13, fontWeight:600, color:C.red, fontFamily:C.mono, marginBottom:6 }}>Access Denied</div>
       <div style={{ fontSize:12, color:C.dim }}>Your current role does not include the <strong style={{ color:C.mid }}>{action}</strong> permission.</div>
-      <div style={{ fontSize:11, color:C.dim, marginTop:6 }}>Switch to a user with the required role via the user menu in the header.</div>
+      <div style={{ fontSize:13, color:C.dim, marginTop:6 }}>Switch to a user with the required role via the user menu in the header.</div>
     </Card>
   );
 }
@@ -714,8 +714,8 @@ function WeatherPanel({ location, lat, lon }) {
     })();
   }, [location, lat, lon]);
   if (!location && !lat) return null;
-  if (loading) return <div style={{ padding:'12px 16px', borderTop:`1px solid ${C.border}`, fontSize:11, color:C.dim, fontFamily:C.mono }}>Fetching weather…</div>;
-  if (err) return <div style={{ padding:'12px 16px', borderTop:`1px solid ${C.border}`, fontSize:11, color:C.red, fontFamily:C.mono }}>{err}</div>;
+  if (loading) return <div style={{ padding:'12px 16px', borderTop:`1px solid ${C.border}`, fontSize:13, color:C.dim, fontFamily:C.mono }}>Fetching weather…</div>;
+  if (err) return <div style={{ padding:'12px 16px', borderTop:`1px solid ${C.border}`, fontSize:13, color:C.red, fontFamily:C.mono }}>{err}</div>;
   if (!wxData?.current) return null;
   const wx = wxData.current;
   const verdict = wxGoNogo(wx);
@@ -723,18 +723,18 @@ function WeatherPanel({ location, lat, lon }) {
   return (
     <div style={{ borderTop:`1px solid ${C.border}`, padding:'14px 16px', background:C.card2 }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-        <span style={{ fontSize:10, fontFamily:C.mono, color:C.teal, letterSpacing:'0.12em', textTransform:'uppercase' }}>Live Weather · {location || `${lat?.toFixed(3)},${lon?.toFixed(3)}`}</span>
-        <span style={{ fontSize:10, fontFamily:C.mono, color:gc, background:gc+'18', border:`1px solid ${gc}44`, borderRadius:4, padding:'2px 8px', fontWeight:700 }}>{verdict?.go ? 'GO' : 'NO-GO'}</span>
+        <span style={{ fontSize:12, fontFamily:C.mono, color:C.teal, letterSpacing:'0.12em', textTransform:'uppercase' }}>Live Weather · {location || `${lat?.toFixed(3)},${lon?.toFixed(3)}`}</span>
+        <span style={{ fontSize:12, fontFamily:C.mono, color:gc, background:gc+'18', border:`1px solid ${gc}44`, borderRadius:4, padding:'2px 8px', fontWeight:700 }}>{verdict?.go ? 'GO' : 'NO-GO'}</span>
       </div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(80px,1fr))', gap:8, marginBottom:10 }}>
         {[['Conditions', WX_CODE[wx.weather_code] || `Code ${wx.weather_code}`],['Wind', `${wx.wind_speed_10m?.toFixed(0)} mph ${wx.wind_direction_10m != null ? WIND_DIR(wx.wind_direction_10m) : ''}`],['Gusts', `${wx.wind_gusts_10m?.toFixed(0)} mph`],['Visibility', `${(wx.visibility/1609.34).toFixed(1)} SM`],['Cloud', `${wx.cloud_cover}%`],['Temp', `${wx.temperature_2m?.toFixed(0)}°F`],['Humidity', `${wx.relative_humidity_2m}%`]].map(([l, v]) => (
           <div key={l} style={{ background:C.card, borderRadius:5, padding:'7px 9px', border:`1px solid ${C.border}` }}>
-            <div style={{ fontSize:9, fontFamily:C.mono, color:C.dim, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:2 }}>{l}</div>
-            <div style={{ fontSize:11, fontFamily:C.mono, color:C.text, fontWeight:700 }}>{v}</div>
+            <div style={{ fontSize:13, fontFamily:C.mono, color:C.dim, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:2 }}>{l}</div>
+            <div style={{ fontSize:13, fontFamily:C.mono, color:C.text, fontWeight:700 }}>{v}</div>
           </div>
         ))}
       </div>
-      <div style={{ fontSize:11, color: verdict?.go ? (verdict?.marginal ? C.amber : C.green) : C.red, fontFamily:C.mono, borderRadius:5, padding:'7px 12px', border:`1px solid ${(verdict?.go ? (verdict?.marginal ? C.amber : C.green) : C.red)}40`, background:`${(verdict?.go ? (verdict?.marginal ? C.amber : C.green) : C.red)}12`, marginBottom:0 }}>{verdict?.reason}</div>
+      <div style={{ fontSize:13, color: verdict?.go ? (verdict?.marginal ? C.amber : C.green) : C.red, fontFamily:C.mono, borderRadius:5, padding:'7px 12px', border:`1px solid ${(verdict?.go ? (verdict?.marginal ? C.amber : C.green) : C.red)}40`, background:`${(verdict?.go ? (verdict?.marginal ? C.amber : C.green) : C.red)}12`, marginBottom:0 }}>{verdict?.reason}</div>
       <WeatherForecast hourly={wxData.hourly}/>
     </div>
   );
@@ -758,19 +758,19 @@ function AirspacePanel({ location, lat, lon, altFt }) {
   return (
     <div style={{ borderTop:`1px solid ${C.border}`, padding:'14px 16px' }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-        <span style={{ fontSize:10, fontFamily:C.mono, color:C.purple, letterSpacing:'0.12em', textTransform:'uppercase' }}>Airspace Advisory</span>
-        <a href="https://faa.maps.arcgis.com/apps/webappviewer/index.html?id=9c2e4406710048e19806ebf6a06754ad" target="_blank" rel="noreferrer" style={{ fontSize:10, fontFamily:C.mono, color:C.blue, textDecoration:'none' }}>B4UFLY →</a>
+        <span style={{ fontSize:12, fontFamily:C.mono, color:C.purple, letterSpacing:'0.12em', textTransform:'uppercase' }}>Airspace Advisory</span>
+        <a href="https://faa.maps.arcgis.com/apps/webappviewer/index.html?id=9c2e4406710048e19806ebf6a06754ad" target="_blank" rel="noreferrer" style={{ fontSize:12, fontFamily:C.mono, color:C.blue, textDecoration:'none' }}>B4UFLY →</a>
       </div>
       {data.map((w, i) => {
         const col = lc[w.level] || C.dim;
         return (
           <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:10, padding:'8px 11px', borderRadius:5, background:col+'10', border:`1px solid ${col}30`, marginBottom:6 }}>
-            <span style={{ width:16, height:16, borderRadius:'50%', background:col+'22', border:`1px solid ${col}55`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, color:col, fontWeight:700, flexShrink:0, marginTop:1 }}>{li[w.level]}</span>
-            <span style={{ fontSize:11, color:col, lineHeight:1.5 }}>{w.msg}</span>
+            <span style={{ width:16, height:16, borderRadius:'50%', background:col+'22', border:`1px solid ${col}55`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, color:col, fontWeight:700, flexShrink:0, marginTop:1 }}>{li[w.level]}</span>
+            <span style={{ fontSize:13, color:col, lineHeight:1.5 }}>{w.msg}</span>
           </div>
         );
       })}
-      <div style={{ fontSize:10, color:C.dim, marginTop:6, fontFamily:C.mono }}>Advisory only. Always verify via FAA B4UFLY, LAANC, and NOTAMs before flight.</div>
+      <div style={{ fontSize:12, color:C.dim, marginTop:6, fontFamily:C.mono }}>Advisory only. Always verify via FAA B4UFLY, LAANC, and NOTAMs before flight.</div>
     </div>
   );
 }
@@ -801,7 +801,7 @@ function OpsMap({ missions, onSelectMission, height = 340 }) {
       const sc = statusCol[m.status] || '#475569';
       const icon = L.divIcon({ className:'', html:`<div style="width:14px;height:14px;background:${sc};border:2px solid rgba(255,255,255,0.9);border-radius:50%;box-shadow:0 0 8px ${sc}80"></div>`, iconSize:[14,14], iconAnchor:[7,7] });
       const marker = L.marker([m.lat, m.lon], { icon }).addTo(map);
-      marker.bindPopup(`<div style="font-family:monospace;font-size:11px;min-width:150px;line-height:1.6"><strong style="font-size:12px">${m.name}</strong><br/>${m.location}<br/>${m.date} · <span style="color:${sc};font-weight:700">${m.status.toUpperCase()}</span><br/>${m.altFt||400}ft AGL · ${m.objective||''}</div>`, { className:'dark-popup' });
+      marker.bindPopup(`<div style="font-family:monospace;font-size:13px;min-width:150px;line-height:1.6"><strong style="font-size:12px">${m.name}</strong><br/>${m.location}<br/>${m.date} · <span style="color:${sc};font-weight:700">${m.status.toUpperCase()}</span><br/>${m.altFt||400}ft AGL · ${m.objective||''}</div>`, { className:'dark-popup' });
       if (onSelectMission) marker.on('click', () => onSelectMission(m.id));
       markersRef.current.push(marker);
       bounds.push([m.lat, m.lon]);
@@ -815,7 +815,7 @@ function OpsMap({ missions, onSelectMission, height = 340 }) {
     if (bounds.length > 1) map.fitBounds(bounds, { padding:[30,30] });
     else if (bounds.length === 1) map.setView(bounds[0], 12);
   }, [missions, leafletReady]);
-  if (!leafletReady) return <div style={{ height, background:C.card, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:C.mono, fontSize:11, color:C.dim, border:`1px solid ${C.border}` }}>Loading map…</div>;
+  if (!leafletReady) return <div style={{ height, background:C.card, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:C.mono, fontSize:13, color:C.dim, border:`1px solid ${C.border}` }}>Loading map…</div>;
   return <div ref={mapRef} style={{ height, borderRadius:8, overflow:'hidden', border:`1px solid ${C.border}` }}/>;
 }
 
@@ -837,15 +837,15 @@ function MissionMapView({ mission, height = 280 }) {
       const nm = nmBetween(mission.lat, mission.lon, ap.lat, ap.lon);
       if (nm <= ap.radiusNm + 5) {
         L.circle([ap.lat, ap.lon], { radius:ap.radiusNm*1852, color:C.purple, fillColor:C.purple, fillOpacity:0.04, weight:1, dashArray:'4 4' }).addTo(map);
-        const apIcon = L.divIcon({ className:'', html:`<div style="font-family:monospace;font-size:9px;color:${C.purple};background:${C.card}cc;padding:1px 4px;border-radius:2px;border:1px solid ${C.purple}60;white-space:nowrap">${ap.id} · ${ap.cls}</div>`, iconSize:'auto', iconAnchor:[0,0] });
+        const apIcon = L.divIcon({ className:'', html:`<div style="font-family:monospace;font-size:13px;color:${C.purple};background:${C.card}cc;padding:1px 4px;border-radius:2px;border:1px solid ${C.purple}60;white-space:nowrap">${ap.id} · ${ap.cls}</div>`, iconSize:'auto', iconAnchor:[0,0] });
         L.marker([ap.lat, ap.lon], { icon:apIcon }).addTo(map);
       }
     });
     mapInstance.current = map;
     return () => { map.remove(); mapInstance.current = null; };
   }, [leafletReady, mission?.lat, mission?.lon, mission?.status]);
-  if (!mission?.lat) return <Card style={{ padding:'16px', textAlign:'center' }}><span style={{ fontSize:11, color:C.dim, fontFamily:C.mono }}>No coordinates set — edit mission to add location</span></Card>;
-  if (!leafletReady) return <div style={{ height, background:C.card, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:C.mono, fontSize:11, color:C.dim }}>Loading map…</div>;
+  if (!mission?.lat) return <Card style={{ padding:'16px', textAlign:'center' }}><span style={{ fontSize:13, color:C.dim, fontFamily:C.mono }}>No coordinates set — edit mission to add location</span></Card>;
+  if (!leafletReady) return <div style={{ height, background:C.card, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:C.mono, fontSize:13, color:C.dim }}>Loading map…</div>;
   return <div ref={mapRef} style={{ height, borderRadius:8, overflow:'hidden', border:`1px solid ${C.border}`, marginBottom:12 }}/>;
 }
 
@@ -884,11 +884,11 @@ function MapPicker({ lat, lon, onChange }) {
       markerRef.current.on('dragend', e => { const p = e.target.getLatLng(); onChange(+p.lat.toFixed(6), +p.lng.toFixed(6)); });
     }
   }, [lat, lon]);
-  if (!leafletReady) return <div style={{ height:200, background:C.card, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:C.mono, fontSize:11, color:C.dim }}>Loading map…</div>;
+  if (!leafletReady) return <div style={{ height:200, background:C.card, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:C.mono, fontSize:13, color:C.dim }}>Loading map…</div>;
   return (
     <div>
       <div ref={mapRef} style={{ height:200, borderRadius:8, overflow:'hidden', border:`1px solid ${C.border}` }}/>
-      <div style={{ fontSize:10, color:C.dim, fontFamily:C.mono, marginTop:4 }}>Click map to set coordinates · drag marker to adjust</div>
+      <div style={{ fontSize:12, color:C.dim, fontFamily:C.mono, marginTop:4 }}>Click map to set coordinates · drag marker to adjust</div>
     </div>
   );
 }
@@ -907,7 +907,7 @@ function WeatherForecast({ hourly }) {
   if (!hours.length) return null;
   return (
     <div style={{ borderTop:`1px solid ${C.border}`, padding:'12px 16px' }}>
-      <div style={{ fontSize:10, fontFamily:C.mono, color:C.blue, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:10 }}>12-Hour Forecast</div>
+      <div style={{ fontSize:12, fontFamily:C.mono, color:C.blue, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:10 }}>12-Hour Forecast</div>
       <div style={{ display:'flex', gap:4, overflowX:'auto', paddingBottom:4 }}>
         {hours.map((h, i) => {
           const hr = h.time.getHours();
@@ -915,11 +915,11 @@ function WeatherForecast({ hourly }) {
           const windCol = h.wind > 25 ? C.red : h.wind > 18 ? C.amber : C.green;
           return (
             <div key={i} style={{ minWidth:58, padding:'6px 5px', background:C.card, border:`1px solid ${C.border}`, borderRadius:5, textAlign:'center', flexShrink:0 }}>
-              <div style={{ fontSize:10, fontFamily:C.mono, color:C.mid, marginBottom:4 }}>{timeLabel}</div>
-              <div style={{ fontSize:11, fontFamily:C.mono, color:C.text, fontWeight:700, marginBottom:2 }}>{h.temp?.toFixed(0)}°</div>
-              <div style={{ fontSize:9, color:C.dim, marginBottom:2 }}>{WX_CODE[h.code]?.split(' ').slice(0,2).join(' ') || '?'}</div>
-              <div style={{ fontSize:9, fontFamily:C.mono, color:windCol }}>{h.wind?.toFixed(0)}mph</div>
-              {h.precip > 0 && <div style={{ fontSize:9, color:C.blue, marginTop:1 }}>{h.precip}%</div>}
+              <div style={{ fontSize:12, fontFamily:C.mono, color:C.mid, marginBottom:4 }}>{timeLabel}</div>
+              <div style={{ fontSize:13, fontFamily:C.mono, color:C.text, fontWeight:700, marginBottom:2 }}>{h.temp?.toFixed(0)}°</div>
+              <div style={{ fontSize:13, color:C.dim, marginBottom:2 }}>{WX_CODE[h.code]?.split(' ').slice(0,2).join(' ') || '?'}</div>
+              <div style={{ fontSize:13, fontFamily:C.mono, color:windCol }}>{h.wind?.toFixed(0)}mph</div>
+              {h.precip > 0 && <div style={{ fontSize:13, color:C.blue, marginTop:1 }}>{h.precip}%</div>}
             </div>
           );
         })}
@@ -1216,7 +1216,7 @@ function DashboardWeather() {
       setLoading(false);
     })();
   }, []);
-  if (loading) return <Card style={{ padding:'16px', minHeight:120 }}><div style={{ fontSize:11, color:C.dim, fontFamily:C.mono }}>Fetching weather…</div></Card>;
+  if (loading) return <Card style={{ padding:'16px', minHeight:120 }}><div style={{ fontSize:13, color:C.dim, fontFamily:C.mono }}>Fetching weather…</div></Card>;
   if (!wx?.current) return null;
   const w = wx.current;
   const verdict = wxGoNogo(w);
@@ -1224,25 +1224,25 @@ function DashboardWeather() {
   return (
     <Card style={{ padding:0, overflow:'hidden' }}>
       <div style={{ padding:'11px 16px', borderBottom:`1px solid ${C.border}`, display:'flex', justifyContent:'space-between', alignItems:'center', background:`${C.teal}08` }}>
-        <span style={{ fontSize:10, fontFamily:C.mono, color:C.teal, letterSpacing:'0.12em', textTransform:'uppercase' }}>Eugene, OR — Current Weather</span>
-        <span style={{ fontSize:10, fontFamily:C.mono, color:gc, background:gc+'18', border:`1px solid ${gc}44`, borderRadius:4, padding:'2px 8px', fontWeight:700 }}>{verdict?.go ? (verdict?.marginal ? 'MARGINAL' : 'GO') : 'NO-GO'}</span>
+        <span style={{ fontSize:12, fontFamily:C.mono, color:C.teal, letterSpacing:'0.12em', textTransform:'uppercase' }}>Eugene, OR — Current Weather</span>
+        <span style={{ fontSize:12, fontFamily:C.mono, color:gc, background:gc+'18', border:`1px solid ${gc}44`, borderRadius:4, padding:'2px 8px', fontWeight:700 }}>{verdict?.go ? (verdict?.marginal ? 'MARGINAL' : 'GO') : 'NO-GO'}</span>
       </div>
       <div style={{ padding:'14px 16px' }}>
         <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:12 }}>
           <div>
             <div style={{ fontSize:32, fontWeight:700, fontFamily:C.mono, color:C.text, lineHeight:1 }}>{w.temperature_2m?.toFixed(0)}°F</div>
-            <div style={{ fontSize:11, color:C.mid, marginTop:4 }}>{WX_CODE[w.weather_code] || `Code ${w.weather_code}`}</div>
+            <div style={{ fontSize:13, color:C.mid, marginTop:4 }}>{WX_CODE[w.weather_code] || `Code ${w.weather_code}`}</div>
           </div>
           <div style={{ flex:1, display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
             {[['Wind', `${w.wind_speed_10m?.toFixed(0)} mph ${w.wind_direction_10m != null ? WIND_DIR(w.wind_direction_10m) : ''}`], ['Gusts', `${w.wind_gusts_10m?.toFixed(0)} mph`], ['Visibility', `${(w.visibility/1609.34).toFixed(1)} SM`], ['Humidity', `${w.relative_humidity_2m}%`], ['Cloud', `${w.cloud_cover}%`], ['Precip', `${w.precipitation?.toFixed(1)} in`]].map(([l, v]) => (
               <div key={l}>
-                <div style={{ fontSize:9, fontFamily:C.mono, color:C.dim, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:1 }}>{l}</div>
-                <div style={{ fontSize:11, fontFamily:C.mono, color:C.text }}>{v}</div>
+                <div style={{ fontSize:13, fontFamily:C.mono, color:C.dim, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:1 }}>{l}</div>
+                <div style={{ fontSize:13, fontFamily:C.mono, color:C.text }}>{v}</div>
               </div>
             ))}
           </div>
         </div>
-        <div style={{ fontSize:11, color:verdict?.go ? (verdict?.marginal ? C.amber : C.green) : C.red, fontFamily:C.mono, borderRadius:5, padding:'7px 12px', border:`1px solid ${(verdict?.go ? (verdict?.marginal ? C.amber : C.green) : C.red)}40`, background:`${(verdict?.go ? (verdict?.marginal ? C.amber : C.green) : C.red)}12` }}>{verdict?.reason}</div>
+        <div style={{ fontSize:13, color:verdict?.go ? (verdict?.marginal ? C.amber : C.green) : C.red, fontFamily:C.mono, borderRadius:5, padding:'7px 12px', border:`1px solid ${(verdict?.go ? (verdict?.marginal ? C.amber : C.green) : C.red)}40`, background:`${(verdict?.go ? (verdict?.marginal ? C.amber : C.green) : C.red)}12` }}>{verdict?.reason}</div>
       </div>
       <WeatherForecast hourly={wx.hourly}/>
     </Card>
@@ -1273,20 +1273,20 @@ function Dashboard({ flights, missions, aircraft, pilots, batteries, incidents, 
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:12 }}>
         <Card style={{ padding:0 }}>
           <div style={{ padding:'11px 16px', borderBottom:`1px solid ${C.border}`, display:'flex', justifyContent:'space-between' }}>
-            <span style={{ fontSize:10, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase' }}>Recent Flights</span>
-            <button onClick={() => setTab('Missions')} style={{ background:'none', border:'none', color:C.dim, fontSize:11, fontFamily:C.mono, cursor:'pointer' }}>All →</button>
+            <span style={{ fontSize:12, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase' }}>Recent Flights</span>
+            <button onClick={() => setTab('Missions')} style={{ background:'none', border:'none', color:C.dim, fontSize:13, fontFamily:C.mono, cursor:'pointer' }}>All →</button>
           </div>
           <DataTable headers={['Date','Location','Aircraft','Min']} rows={recent.map(f => [
             <span key="d" style={{ fontFamily:C.mono, fontSize:11 }}>{f.date}</span>,
             <span key="l" style={{ fontSize:11 }}>{f.location}</span>,
-            <span key="a" style={{ fontFamily:C.mono, fontSize:11, color:C.amber }}>{aTail(f.aircraftId)}</span>,
+            <span key="a" style={{ fontFamily:C.mono, fontSize:13, color:C.amber }}>{aTail(f.aircraftId)}</span>,
             <span key="m" style={{ fontFamily:C.mono, fontSize:11 }}>{f.durationMin}</span>,
           ])}/>
         </Card>
         <Card style={{ padding:0 }}>
           <div style={{ padding:'11px 16px', borderBottom:`1px solid ${C.border}`, display:'flex', justifyContent:'space-between' }}>
-            <span style={{ fontSize:10, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase' }}>Upcoming Missions</span>
-            <button onClick={() => setTab('Missions')} style={{ background:'none', border:'none', color:C.dim, fontSize:11, fontFamily:C.mono, cursor:'pointer' }}>All →</button>
+            <span style={{ fontSize:12, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase' }}>Upcoming Missions</span>
+            <button onClick={() => setTab('Missions')} style={{ background:'none', border:'none', color:C.dim, fontSize:13, fontFamily:C.mono, cursor:'pointer' }}>All →</button>
           </div>
           <DataTable headers={['Date','Mission','Pilot','Status']} rows={upcoming.map(m => [
             <span key="d" style={{ fontFamily:C.mono, fontSize:11 }}>{m.date}</span>,
@@ -1299,31 +1299,31 @@ function Dashboard({ flights, missions, aircraft, pilots, batteries, incidents, 
       {pilots.some(p => p.status==='expired') && (
         <div style={{ marginBottom:8, background:`${C.red}12`, border:`1px solid ${C.red}40`, borderRadius:8, padding:'11px 16px', display:'flex', alignItems:'center', gap:10 }}>
           <span style={{ color:C.red }}>!</span>
-          <div><div style={{ fontSize:12, color:C.red, fontFamily:C.mono, fontWeight:700 }}>Pilot currency alert</div><div style={{ fontSize:11, color:C.mid, marginTop:2 }}>{pilots.filter(p => p.status==='expired').map(p => p.name).join(', ')} — expired</div></div>
-          <button onClick={() => setTab('Assets')} style={{ marginLeft:'auto', background:'none', border:`1px solid ${C.red}`, color:C.red, borderRadius:4, padding:'4px 10px', fontSize:10, fontFamily:C.mono, cursor:'pointer' }}>Review →</button>
+          <div><div style={{ fontSize:12, color:C.red, fontFamily:C.mono, fontWeight:700 }}>Pilot currency alert</div><div style={{ fontSize:13, color:C.mid, marginTop:2 }}>{pilots.filter(p => p.status==='expired').map(p => p.name).join(', ')} — expired</div></div>
+          <button onClick={() => setTab('Assets')} style={{ marginLeft:'auto', background:'none', border:`1px solid ${C.red}`, color:C.red, borderRadius:4, padding:'4px 10px', fontSize:12, fontFamily:C.mono, cursor:'pointer' }}>Review →</button>
         </div>
       )}
       {openInc > 0 && (
         <div style={{ marginBottom:8, background:`${C.orange}12`, border:`1px solid ${C.orange}40`, borderRadius:8, padding:'11px 16px', display:'flex', alignItems:'center', gap:10 }}>
           <span style={{ color:C.orange }}>!</span>
-          <div><div style={{ fontSize:12, color:C.orange, fontFamily:C.mono, fontWeight:700 }}>Open incident reports</div><div style={{ fontSize:11, color:C.mid, marginTop:2 }}>{openInc} report(s) in draft — pending submission</div></div>
-          <button onClick={() => setTab('Incidents')} style={{ marginLeft:'auto', background:'none', border:`1px solid ${C.orange}`, color:C.orange, borderRadius:4, padding:'4px 10px', fontSize:10, fontFamily:C.mono, cursor:'pointer' }}>Review →</button>
+          <div><div style={{ fontSize:12, color:C.orange, fontFamily:C.mono, fontWeight:700 }}>Open incident reports</div><div style={{ fontSize:13, color:C.mid, marginTop:2 }}>{openInc} report(s) in draft — pending submission</div></div>
+          <button onClick={() => setTab('Incidents')} style={{ marginLeft:'auto', background:'none', border:`1px solid ${C.orange}`, color:C.orange, borderRadius:4, padding:'4px 10px', fontSize:12, fontFamily:C.mono, cursor:'pointer' }}>Review →</button>
         </div>
       )}
       {badBat > 0 && (
         <div style={{ background:`${C.amber}10`, border:`1px solid ${C.amber}40`, borderRadius:8, padding:'11px 16px', display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
           <span style={{ color:C.amber }}>!</span>
-          <div><div style={{ fontSize:12, color:C.amber, fontFamily:C.mono, fontWeight:700 }}>Battery health warning</div><div style={{ fontSize:11, color:C.mid, marginTop:2 }}>{badBat} battery/batteries degraded or retired</div></div>
-          <button onClick={() => setTab('Assets')} style={{ marginLeft:'auto', background:'none', border:`1px solid ${C.amber}`, color:C.amber, borderRadius:4, padding:'4px 10px', fontSize:10, fontFamily:C.mono, cursor:'pointer' }}>Review →</button>
+          <div><div style={{ fontSize:12, color:C.amber, fontFamily:C.mono, fontWeight:700 }}>Battery health warning</div><div style={{ fontSize:13, color:C.mid, marginTop:2 }}>{badBat} battery/batteries degraded or retired</div></div>
+          <button onClick={() => setTab('Assets')} style={{ marginLeft:'auto', background:'none', border:`1px solid ${C.amber}`, color:C.amber, borderRadius:4, padding:'4px 10px', fontSize:12, fontFamily:C.mono, cursor:'pointer' }}>Review →</button>
         </div>
       )}
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
         <div>
-          <div style={{ fontSize:10, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:8 }}>Operations Map</div>
+          <div style={{ fontSize:12, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:8 }}>Operations Map</div>
           <OpsMap missions={missions} onSelectMission={id => { setTab('Missions'); }} height={380}/>
           <div style={{ display:'flex', gap:12, marginTop:8, flexWrap:'wrap' }}>
             {[['Planned','#60A5FA'],['Approved','#10B981'],['Completed','#475569'],['Airport',C.purple]].map(([l,c]) => (
-              <div key={l} style={{ display:'flex', alignItems:'center', gap:5, fontSize:10, fontFamily:C.mono, color:C.dim }}>
+              <div key={l} style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, fontFamily:C.mono, color:C.dim }}>
                 <div style={{ width:8, height:8, borderRadius:l==='Airport'?2:'50%', background:c }}/>{l}
               </div>
             ))}
@@ -1351,15 +1351,15 @@ function CrewManifest({ crew, setCrew, pilots, orgUsers }) {
   return (
     <div>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
-        <span style={{ fontSize:10, fontFamily:C.mono, color:C.teal, letterSpacing:'0.1em', textTransform:'uppercase' }}>Crew Manifest</span>
-        <button onClick={addMember} style={{ background:'transparent', border:`1px solid ${C.teal}`, color:C.teal, borderRadius:4, padding:'4px 10px', fontSize:10, fontFamily:C.mono, cursor:'pointer' }}>+ Add Member</button>
+        <span style={{ fontSize:12, fontFamily:C.mono, color:C.teal, letterSpacing:'0.1em', textTransform:'uppercase' }}>Crew Manifest</span>
+        <button onClick={addMember} style={{ background:'transparent', border:`1px solid ${C.teal}`, color:C.teal, borderRadius:4, padding:'4px 10px', fontSize:12, fontFamily:C.mono, cursor:'pointer' }}>+ Add Member</button>
       </div>
-      {crew.length === 0 && <div style={{ fontSize:11, color:C.dim, fontFamily:C.mono, padding:'8px 0' }}>No crew assigned — add members from the org roster below</div>}
+      {crew.length === 0 && <div style={{ fontSize:13, color:C.dim, fontFamily:C.mono, padding:'8px 0' }}>No crew assigned — add members from the org roster below</div>}
       {crew.map((m, i) => (
         <div key={i} style={{ display:'grid', gridTemplateColumns:'1fr 1fr auto', gap:8, marginBottom:8, alignItems:'end' }}>
           <Field label={i===0 ? 'Crew Member' : undefined}><select value={m.pilotId} onChange={e => update(i,'pilotId',e.target.value)} style={{ width:'100%' }}><option value="">Select person…</option>{allPeople.map(person => (<option key={person.id} value={person.id}>{person.label}</option>))}</select></Field>
           <Field label={i===0 ? 'Flight Role' : undefined}><select value={m.role} onChange={e => update(i,'role',e.target.value)} style={{ width:'100%' }}>{CREW_ROLES.map(r => <option key={r} value={r}>{r}</option>)}</select></Field>
-          <button onClick={() => remove(i)} style={{ background:'none', border:`1px solid ${C.red}40`, color:C.red, borderRadius:4, padding:'8px 10px', cursor:'pointer', fontSize:11, marginBottom:12 }}>X</button>
+          <button onClick={() => remove(i)} style={{ background:'none', border:`1px solid ${C.red}40`, color:C.red, borderRadius:4, padding:'8px 10px', cursor:'pointer', fontSize:13, marginBottom:12 }}>X</button>
         </div>
       ))}
     </div>
@@ -1368,7 +1368,7 @@ function CrewManifest({ crew, setCrew, pilots, orgUsers }) {
 function CrewSignOff({ mission, setMissions, pilots, orgUsers, activeUser }) {
   if (!mission) return null;
   const crew = mission.crew || [];
-  if (crew.length === 0) return (<Card style={{ padding:'12px 16px', marginBottom:10 }}><div style={{ fontSize:11, color:C.dim, fontFamily:C.mono }}>No crew manifest — add crew members via Mission edit to enable sign-offs</div></Card>);
+  if (crew.length === 0) return (<Card style={{ padding:'12px 16px', marginBottom:10 }}><div style={{ fontSize:13, color:C.dim, fontFamily:C.mono }}>No crew manifest — add crew members via Mission edit to enable sign-offs</div></Card>);
   const resolvePerson = (id) => {
     const orgUser = (orgUsers || []).find(u => u.id === id);
     if (orgUser) { const linkedPilot = pilots.find(p => p.id === orgUser.pilotId); return { name: orgUser.name, initials: orgUser.name.split(' ').map(n=>n[0]).join('').slice(0,2), subtitle: (orgUser.roles || (orgUser.role ? [orgUser.role] : [])).join(', '), certInfo: linkedPilot ? `${linkedPilot.cert} #${linkedPilot.certNum||'—'}` : null }; }
@@ -1382,27 +1382,27 @@ function CrewSignOff({ mission, setMissions, pilots, orgUsers, activeUser }) {
   return (
     <Card style={{ padding:0, marginBottom:10 }}>
       <div style={{ padding:'9px 16px', borderBottom:`1px solid ${C.border}`, display:'flex', justifyContent:'space-between', alignItems:'center', background:`${C.teal}08` }}>
-        <span style={{ fontSize:10, fontFamily:C.mono, color:C.teal, letterSpacing:'0.12em', textTransform:'uppercase' }}>Crew Briefing & Sign-Off</span>
-        <span style={{ fontSize:10, fontFamily:C.mono, color:allBriefed?C.green:C.dim }}>{crew.filter(c=>c.briefedAt).length}/{crew.length} briefed</span>
+        <span style={{ fontSize:12, fontFamily:C.mono, color:C.teal, letterSpacing:'0.12em', textTransform:'uppercase' }}>Crew Briefing & Sign-Off</span>
+        <span style={{ fontSize:12, fontFamily:C.mono, color:allBriefed?C.green:C.dim }}>{crew.filter(c=>c.briefedAt).length}/{crew.length} briefed</span>
       </div>
       <div style={{ padding:'10px 16px' }}>
         {crew.map((c, i) => {
           const person = resolvePerson(c.pilotId);
-          if (!person) return (<div key={i} style={{ padding:'8px 0', fontSize:11, color:C.dim, fontFamily:C.mono }}>Unknown crew member (id: {c.pilotId||'unset'})</div>);
+          if (!person) return (<div key={i} style={{ padding:'8px 0', fontSize:13, color:C.dim, fontFamily:C.mono }}>Unknown crew member (id: {c.pilotId||'unset'})</div>);
           const briefed = !!c.briefedAt;
           return (
             <div key={i} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 0', borderBottom:i<crew.length-1?`1px solid ${C.border}20`:'none' }}>
-              <div style={{ width:34, height:34, borderRadius:'50%', background:briefed?`${C.green}18`:`${C.amber}18`, border:`1.5px solid ${briefed?C.green:C.amber}40`, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:C.mono, fontSize:11, fontWeight:700, color:briefed?C.green:C.amber, flexShrink:0 }}>{person.initials}</div>
+              <div style={{ width:34, height:34, borderRadius:'50%', background:briefed?`${C.green}18`:`${C.amber}18`, border:`1.5px solid ${briefed?C.green:C.amber}40`, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:C.mono, fontSize:13, fontWeight:700, color:briefed?C.green:C.amber, flexShrink:0 }}>{person.initials}</div>
               <div style={{ flex:1 }}>
                 <div style={{ fontSize:12, color:C.text, fontWeight:500 }}>{person.name}</div>
-                <div style={{ fontSize:10, color:C.dim, fontFamily:C.mono, marginTop:1 }}>{c.role} · {person.subtitle}{person.certInfo && <span style={{ color:C.dim }}> · {person.certInfo}</span>}{briefed && <span style={{ color:C.green, marginLeft:8 }}>Briefed {new Date(c.briefedAt).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}</span>}</div>
+                <div style={{ fontSize:12, color:C.dim, fontFamily:C.mono, marginTop:1 }}>{c.role} · {person.subtitle}{person.certInfo && <span style={{ color:C.dim }}> · {person.certInfo}</span>}{briefed && <span style={{ color:C.green, marginLeft:8 }}>Briefed {new Date(c.briefedAt).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}</span>}</div>
               </div>
               {briefed ? <Btn onClick={() => clearOff(i)} xstyle={{ padding:'4px 10px', fontSize:10 }}>Clear</Btn> : <Btn variant='teal' onClick={() => signOff(i)} xstyle={{ padding:'4px 10px', fontSize:10 }}>Sign Off</Btn>}
             </div>
           );
         })}
       </div>
-      {allBriefed && (<div style={{ padding:'8px 16px', background:`${C.green}10`, borderTop:`1px solid ${C.green}30`, fontSize:11, color:C.green, fontFamily:C.mono }}>All crew briefed and signed off</div>)}
+      {allBriefed && (<div style={{ padding:'8px 16px', background:`${C.green}10`, borderTop:`1px solid ${C.green}30`, fontSize:13, color:C.green, fontFamily:C.mono }}>All crew briefed and signed off</div>)}
     </Card>
   );
 }
@@ -1433,15 +1433,15 @@ function RiskMatrix({ mission, pilot, aircraft, activeUser, onSaveScore }) {
   return (
     <Card style={{ padding:0, marginBottom:14 }}>
       <div style={{ padding:'11px 16px', borderBottom:`1px solid ${C.border}`, display:'flex', alignItems:'center', justifyContent:'space-between', background:`${level.color}10` }}>
-        <span style={{ fontSize:10, fontFamily:C.mono, color:level.color, letterSpacing:'0.12em', textTransform:'uppercase', fontWeight:700 }}>Risk Assessment Matrix</span>
+        <span style={{ fontSize:12, fontFamily:C.mono, color:level.color, letterSpacing:'0.12em', textTransform:'uppercase', fontWeight:700 }}>Risk Assessment Matrix</span>
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-          {mission.riskScore !== null && <span style={{ fontSize:10, color:C.dim, fontFamily:C.mono }}>Scored {mission.riskScore} pts</span>}
-          {mission.riskOverride && <span style={{ fontSize:10, color:C.orange, fontFamily:C.mono, background:`${C.orange}15`, borderRadius:3, padding:'1px 7px' }}>Override: {mission.riskOverride.by}</span>}
+          {mission.riskScore !== null && <span style={{ fontSize:12, color:C.dim, fontFamily:C.mono }}>Scored {mission.riskScore} pts</span>}
+          {mission.riskOverride && <span style={{ fontSize:12, color:C.orange, fontFamily:C.mono, background:`${C.orange}15`, borderRadius:3, padding:'1px 7px' }}>Override: {mission.riskOverride.by}</span>}
           <div style={{ display:'flex', alignItems:'baseline', gap:4 }}>
             <span style={{ fontSize:26, fontWeight:700, fontFamily:C.mono, color:level.color, lineHeight:1 }}>{total}</span>
-            <span style={{ fontSize:10, color:C.dim, fontFamily:C.mono }}>/ {RISK_MAX}</span>
+            <span style={{ fontSize:12, color:C.dim, fontFamily:C.mono }}>/ {RISK_MAX}</span>
           </div>
-          <span style={{ background:level.color+'18', border:`1px solid ${level.color}44`, color:level.color, borderRadius:4, padding:'3px 10px', fontSize:11, fontFamily:C.mono, fontWeight:700, letterSpacing:'0.08em' }}>{level.label}</span>
+          <span style={{ background:level.color+'18', border:`1px solid ${level.color}44`, color:level.color, borderRadius:4, padding:'3px 10px', fontSize:13, fontFamily:C.mono, fontWeight:700, letterSpacing:'0.08em' }}>{level.label}</span>
         </div>
       </div>
       <div style={{ padding:'12px 16px 8px', borderBottom:`1px solid ${C.border}` }}>
@@ -1452,7 +1452,7 @@ function RiskMatrix({ mission, pilot, aircraft, activeUser, onSaveScore }) {
           <div style={{ position:'absolute', left:`${26/RISK_MAX*100}%`, width:`${10/RISK_MAX*100}%`, height:'100%', background:`${C.red}50`, borderRadius:'0 4px 4px 0' }}/>
           <div style={{ position:'absolute', top:-2, height:12, width:3, background:level.color, borderRadius:2, left:`${Math.min(total/RISK_MAX*100,98)}%`, boxShadow:`0 0 6px ${level.color}` }}/>
         </div>
-        <div style={{ display:'flex', justifyContent:'space-between', fontSize:9, fontFamily:C.mono, color:C.dim }}><span style={{ color:C.green }}>LOW 0-10</span><span style={{ color:C.amber }}>MEDIUM 11-18</span><span style={{ color:C.orange }}>HIGH 19-26</span><span style={{ color:C.red }}>CRITICAL 27+</span></div>
+        <div style={{ display:'flex', justifyContent:'space-between', fontSize:13, fontFamily:C.mono, color:C.dim }}><span style={{ color:C.green }}>LOW 0-10</span><span style={{ color:C.amber }}>MEDIUM 11-18</span><span style={{ color:C.orange }}>HIGH 19-26</span><span style={{ color:C.red }}>CRITICAL 27+</span></div>
       </div>
       <div style={{ padding:'12px 16px' }}>
         {RISK_CATS.map(cat => {
@@ -1462,8 +1462,8 @@ function RiskMatrix({ mission, pilot, aircraft, activeUser, onSaveScore }) {
           return (
             <div key={cat.id} style={{ marginBottom:10 }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:3 }}>
-                <div style={{ minWidth:0 }}><span style={{ fontSize:12, color:C.text }}>{cat.label}</span><span style={{ fontSize:10, color:C.dim, marginLeft:10 }}>{sc.note}</span></div>
-                <span style={{ fontSize:11, fontFamily:C.mono, color:col, fontWeight:700, flexShrink:0, marginLeft:10 }}>{sc.v}/{cat.max}</span>
+                <div style={{ minWidth:0 }}><span style={{ fontSize:12, color:C.text }}>{cat.label}</span><span style={{ fontSize:12, color:C.dim, marginLeft:10 }}>{sc.note}</span></div>
+                <span style={{ fontSize:13, fontFamily:C.mono, color:col, fontWeight:700, flexShrink:0, marginLeft:10 }}>{sc.v}/{cat.max}</span>
               </div>
               <div style={{ height:4, background:C.border, borderRadius:2 }}><div style={{ height:'100%', width:`${pct}%`, background:col, borderRadius:2, transition:'width 0.4s' }}/></div>
             </div>
@@ -1473,13 +1473,13 @@ function RiskMatrix({ mission, pilot, aircraft, activeUser, onSaveScore }) {
       <div style={{ padding:'10px 16px', borderTop:`1px solid ${C.border}`, display:'flex', alignItems:'center', gap:10, background:needsOverride&&!hasOverride?`${C.red}08`:C.card }}>
         {needsOverride && !hasOverride ? (<>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2L13 12H1L7 2Z" stroke={C.red} strokeWidth="1.5" strokeLinejoin="round"/><line x1="7" y1="6" x2="7" y2="9" stroke={C.red} strokeWidth="1.5" strokeLinecap="round"/><circle cx="7" cy="11" r="0.5" fill={C.red}/></svg>
-          <span style={{ fontSize:11, color:C.red, fontFamily:C.mono, flex:1 }}>Score {total} — SUPERVISOR OVERRIDE REQUIRED before approval</span>
-          {canOverride ? <Btn variant='red' onClick={handleOverride} xstyle={{ padding:'5px 12px', fontSize:10 }}>Override & Sign</Btn> : <span style={{ fontSize:10, color:C.dim, fontFamily:C.mono }}>Safety Officer or Chief Pilot must override</span>}
+          <span style={{ fontSize:13, color:C.red, fontFamily:C.mono, flex:1 }}>Score {total} — SUPERVISOR OVERRIDE REQUIRED before approval</span>
+          {canOverride ? <Btn variant='red' onClick={handleOverride} xstyle={{ padding:'5px 12px', fontSize:10 }}>Override & Sign</Btn> : <span style={{ fontSize:12, color:C.dim, fontFamily:C.mono }}>Safety Officer or Chief Pilot must override</span>}
         </>) : needsOverride && hasOverride ? (<>
-          <span style={{ fontSize:11, color:C.orange, fontFamily:C.mono, flex:1 }}>Override on record — "{mission.riskOverride?.reason}"</span>
+          <span style={{ fontSize:13, color:C.orange, fontFamily:C.mono, flex:1 }}>Override on record — "{mission.riskOverride?.reason}"</span>
           <Btn onClick={handleAccept} xstyle={{ padding:'5px 12px', fontSize:10 }}>Accept Score</Btn>
         </>) : (<>
-          <span style={{ fontSize:11, color:C.green, fontFamily:C.mono, flex:1 }}>Risk within acceptable limits</span>
+          <span style={{ fontSize:13, color:C.green, fontFamily:C.mono, flex:1 }}>Risk within acceptable limits</span>
           <Btn variant='green' onClick={handleAccept} xstyle={{ padding:'5px 12px', fontSize:10 }}>Accept Score</Btn>
         </>)}
       </div>
@@ -1547,7 +1547,7 @@ function MissionForm({ form, setForm, aircraft, pilots, orgUsers, isEdit, templa
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10, padding:'10px 12px', background:C.card2, border:`1px solid ${C.border}`, borderRadius:6, marginTop:4, marginBottom:4 }}>
         <Field label="Latitude"><input type="number" step="0.000001" value={form.lat ?? ''} onChange={e => setForm(f => ({ ...f, lat: e.target.value !== '' ? parseFloat(e.target.value) : null }))} placeholder="44.052100" style={{ width:'100%', fontFamily:'monospace' }}/></Field>
         <Field label="Longitude"><input type="number" step="0.000001" value={form.lon ?? ''} onChange={e => setForm(f => ({ ...f, lon: e.target.value !== '' ? parseFloat(e.target.value) : null }))} placeholder="-123.086800" style={{ width:'100%', fontFamily:'monospace' }}/></Field>
-        <Field label="Coord Source"><div style={{ fontSize:11, color:C.dim, fontFamily:C.mono, paddingTop:6, lineHeight:1.6 }}>{form.lat && form.lon ? <span style={{ color:C.teal }}>Manual / pin</span> : <span>Auto-geocode on save</span>}</div></Field>
+        <Field label="Coord Source"><div style={{ fontSize:13, color:C.dim, fontFamily:C.mono, paddingTop:6, lineHeight:1.6 }}>{form.lat && form.lon ? <span style={{ color:C.teal }}>Manual / pin</span> : <span>Auto-geocode on save</span>}</div></Field>
       </div>
       <div style={{ marginTop:4, marginBottom:8 }}>
         <MapPicker lat={form.lat} lon={form.lon} onChange={(lat, lon) => setForm(f => ({ ...f, lat, lon }))}/>
@@ -1661,10 +1661,10 @@ function MissionWorkspace({ mission, missions, setMissions, flights, setFlights,
     <div style={{ position:'relative' }}>
       {flConfirmEl}{closeConfirmEl}
       <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16, flexWrap:'wrap' }}>
-        <button onClick={handleClose} style={{ background:'transparent', border:`1px solid ${C.border2}`, color:C.dim, borderRadius:5, padding:'6px 12px', fontFamily:C.mono, fontSize:10, cursor:'pointer', letterSpacing:'0.06em' }}>← All Missions</button>
+        <button onClick={handleClose} style={{ background:'transparent', border:`1px solid ${C.border2}`, color:C.dim, borderRadius:5, padding:'6px 12px', fontFamily:C.mono, fontSize:12, cursor:'pointer', letterSpacing:'0.06em' }}>← All Missions</button>
         <div style={{ flex:1 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}><span style={{ fontSize:15, fontWeight:600, color:C.text }}>{mission.name}</span><Badge status={mission.status}/><span style={{ fontFamily:C.mono, fontSize:11, color:C.dim }}>{mission.date} {mission.time}</span><span style={{ fontSize:11, color:C.dim }}>{mission.location}</span></div>
-          <div style={{ fontSize:11, color:C.dim, marginTop:2 }}>{mission.objective} · {aTail(mission.aircraftId)} · {pName(mission.pilotId)} · {mission.altFt}ft AGL</div>
+          <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}><span style={{ fontSize:15, fontWeight:600, color:C.text }}>{mission.name}</span><Badge status={mission.status}/><span style={{ fontFamily:C.mono, fontSize:13, color:C.dim }}>{mission.date} {mission.time}</span><span style={{ fontSize:13, color:C.dim }}>{mission.location}</span></div>
+          <div style={{ fontSize:13, color:C.dim, marginTop:2 }}>{mission.objective} · {aTail(mission.aircraftId)} · {pName(mission.pilotId)} · {mission.altFt}ft AGL</div>
         </div>
         <div style={{ display:'flex', gap:6, flexShrink:0 }}>
           <Btn variant='teal' onClick={printBriefing} xstyle={{ padding:'6px 12px' }}>Print Briefing</Btn>
@@ -1678,9 +1678,9 @@ function MissionWorkspace({ mission, missions, setMissions, flights, setFlights,
           const col=SUB_COL[s], active=sub===s;
           const flBadge = s==='Flight Log' ? (mFlights.length||null) : null;
           const pfBadge = s==='Pre-Flight' ? (allDone&&crewAllBriefed?'✓':done>0?`${done}/${total}`:null) : null;
-          return (<button key={s} onClick={()=>setSub(s)} style={{ background:'none', border:'none', padding:'9px 16px', fontSize:11, fontFamily:C.mono, letterSpacing:'0.06em', textTransform:'uppercase', color:active?col:C.dim, borderBottom:active?`2px solid ${col}`:'2px solid transparent', marginBottom:-1, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>{s}{(flBadge||pfBadge) && <span style={{ fontSize:9, background:`${col}20`, color:col, border:`1px solid ${col}40`, borderRadius:10, padding:'1px 6px', fontWeight:700 }}>{flBadge||pfBadge}</span>}</button>);
+          return (<button key={s} onClick={()=>setSub(s)} style={{ background:'none', border:'none', padding:'9px 16px', fontSize:13, fontFamily:C.mono, letterSpacing:'0.06em', textTransform:'uppercase', color:active?col:C.dim, borderBottom:active?`2px solid ${col}`:'2px solid transparent', marginBottom:-1, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>{s}{(flBadge||pfBadge) && <span style={{ fontSize:13, background:`${col}20`, color:col, border:`1px solid ${col}40`, borderRadius:10, padding:'1px 6px', fontWeight:700 }}>{flBadge||pfBadge}</span>}</button>);
         })}
-        <div style={{ marginLeft:'auto', fontSize:9, fontFamily:C.mono, color:C.dim, alignSelf:'center', paddingBottom:4 }}>ESC to go back</div>
+        <div style={{ marginLeft:'auto', fontSize:13, fontFamily:C.mono, color:C.dim, alignSelf:'center', paddingBottom:4 }}>ESC to go back</div>
       </div>
 
       {sub==='Overview' && (
@@ -1691,7 +1691,7 @@ function MissionWorkspace({ mission, missions, setMissions, flights, setFlights,
           {mission.notes && <Card style={{ padding:'10px 14px', marginBottom:10, fontSize:12, color:C.mid }}>{mission.notes}</Card>}
           {mission.riskScore!==null && mission.riskScore!==undefined && (
             <Card style={{ padding:'10px 14px', marginBottom:10 }}>
-              <div style={{ fontSize:9, fontFamily:C.mono, color:C.dim, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:6 }}>Risk Assessment</div>
+              <div style={{ fontSize:13, fontFamily:C.mono, color:C.dim, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:6 }}>Risk Assessment</div>
               {(()=>{ const rl=getRiskLevel(mission.riskScore); return <span style={{ fontFamily:C.mono, fontSize:13, color:rl.color, fontWeight:700 }}>{mission.riskScore} — {rl.label}</span>; })()}
             </Card>
           )}
@@ -1707,7 +1707,7 @@ function MissionWorkspace({ mission, missions, setMissions, flights, setFlights,
           })()}
           {mission.lat && mission.date && <SunTimesPanel lat={mission.lat} lon={mission.lon} date={mission.date}/>}
           {mission.lat && <DensityAltitudePanel lat={mission.lat} lon={mission.lon} altFt={mission.altFt} aircraft={ac}/>}
-          <div style={{ fontSize:10, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:8 }}>Mission Location</div>
+          <div style={{ fontSize:12, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:8 }}>Mission Location</div>
           <MissionMapView mission={mission}/>
           <WeatherPanel location={mission.location} lat={mission.lat} lon={mission.lon}/>
           <AirspacePanel location={mission.location} lat={mission.lat} lon={mission.lon} altFt={mission.altFt}/>
@@ -1718,7 +1718,7 @@ function MissionWorkspace({ mission, missions, setMissions, flights, setFlights,
         <div>
           <Card style={{ padding:14, marginBottom:14 }}>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(110px,1fr))', gap:12, marginBottom:12 }}>
-              {[['Aircraft',ac?.tail||'—'],['Model',ac?.model||'—'],['Pilot',pilot?.name||'—'],['Altitude',`${mission.altFt}ft AGL`],['Status',mission.status]].map(([l,v])=>(<div key={l}><div style={{ fontSize:9, fontFamily:C.mono, color:C.dim, letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:3 }}>{l}</div><div style={{ fontSize:12, color:C.text, fontFamily:C.mono }}>{v}</div></div>))}
+              {[['Aircraft',ac?.tail||'—'],['Model',ac?.model||'—'],['Pilot',pilot?.name||'—'],['Altitude',`${mission.altFt}ft AGL`],['Status',mission.status]].map(([l,v])=>(<div key={l}><div style={{ fontSize:13, fontFamily:C.mono, color:C.dim, letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:3 }}>{l}</div><div style={{ fontSize:12, color:C.text, fontFamily:C.mono }}>{v}</div></div>))}
             </div>
             <div style={{ display:'flex', gap:8 }}>
               {!pfStarted && <Btn variant='primary' onClick={()=>setPfStarted(true)}>Begin Checklist</Btn>}
@@ -1731,8 +1731,8 @@ function MissionWorkspace({ mission, missions, setMissions, flights, setFlights,
             <div>
               <div style={{ marginBottom:14 }}>
                 <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
-                  <span style={{ fontSize:10, fontFamily:C.mono, color:C.dim, textTransform:'uppercase', letterSpacing:'0.1em' }}>Checklist Progress</span>
-                  <span style={{ fontSize:11, fontFamily:C.mono, color:allDone?C.green:C.amber, fontWeight:700 }}>{done}/{total} · {pct}%</span>
+                  <span style={{ fontSize:12, fontFamily:C.mono, color:C.dim, textTransform:'uppercase', letterSpacing:'0.1em' }}>Checklist Progress</span>
+                  <span style={{ fontSize:13, fontFamily:C.mono, color:allDone?C.green:C.amber, fontWeight:700 }}>{done}/{total} · {pct}%</span>
                 </div>
                 <div style={{ height:5, background:C.border, borderRadius:3 }}><div style={{ height:'100%', width:`${pct}%`, background:allDone?C.green:C.amber, borderRadius:3, transition:'width 0.3s' }}/></div>
               </div>
@@ -1741,8 +1741,8 @@ function MissionWorkspace({ mission, missions, setMissions, flights, setFlights,
                 return(
                   <Card key={cat} style={{ padding:0, marginBottom:10 }}>
                     <div style={{ padding:'9px 16px', borderBottom:`1px solid ${C.border}`, display:'flex', justifyContent:'space-between', background:`${C.amber}08` }}>
-                      <span style={{ fontSize:10, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase' }}>{cat}</span>
-                      <span style={{ fontSize:10, fontFamily:C.mono, color:catDone===items.length?C.green:C.dim }}>{catDone}/{items.length}</span>
+                      <span style={{ fontSize:12, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase' }}>{cat}</span>
+                      <span style={{ fontSize:12, fontFamily:C.mono, color:catDone===items.length?C.green:C.dim }}>{catDone}/{items.length}</span>
                     </div>
                     {items.map(item=>(
                       <div key={item.id} onClick={()=>togglePf(item.id)} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 16px', borderBottom:`1px solid ${C.border}20`, cursor:'pointer', background:pfChecked[item.id]?`${C.green}08`:'transparent', transition:'background 0.15s' }}>
@@ -1757,15 +1757,15 @@ function MissionWorkspace({ mission, missions, setMissions, flights, setFlights,
               })}
               <Card style={{ padding:0, marginBottom:10 }}>
                 <div style={{ padding:'9px 16px', borderBottom:`1px solid ${C.border}`, background:`${C.purple}08` }}>
-                  <span style={{ fontSize:10, fontFamily:C.mono, color:C.purple, letterSpacing:'0.12em', textTransform:'uppercase' }}>NOTAM Log</span>
+                  <span style={{ fontSize:12, fontFamily:C.mono, color:C.purple, letterSpacing:'0.12em', textTransform:'uppercase' }}>NOTAM Log</span>
                 </div>
-                <div style={{ padding:14 }}><textarea value={mission.notams||''} onChange={e=>saveNotam(e.target.value)} rows={4} placeholder="Log NOTAM numbers and summaries…" style={{ width:'100%', fontFamily:C.mono, fontSize:11, lineHeight:1.6, resize:'vertical' }}/></div>
+                <div style={{ padding:14 }}><textarea value={mission.notams||''} onChange={e=>saveNotam(e.target.value)} rows={4} placeholder="Log NOTAM numbers and summaries…" style={{ width:'100%', fontFamily:C.mono, fontSize:13, lineHeight:1.6, resize:'vertical' }}/></div>
               </Card>
               <CrewSignOff mission={mission} setMissions={setMissions} pilots={pilots} orgUsers={orgUsers} activeUser={activeUser}/>
               {allDone && crewAllBriefed && (
                 <Card style={{ padding:22, background:`${C.green}12`, border:`1px solid ${C.green}40`, textAlign:'center', marginTop:6 }}>
                   <div style={{ fontSize:14, color:C.green, fontFamily:C.mono, fontWeight:700, letterSpacing:'0.08em' }}>ALL ITEMS COMPLETE — CLEARED FOR FLIGHT</div>
-                  <div style={{ fontSize:11, color:C.mid, marginTop:6 }}>Pre-flight completed for <strong style={{ color:C.text }}>{mission.name}</strong></div>
+                  <div style={{ fontSize:13, color:C.mid, marginTop:6 }}>Pre-flight completed for <strong style={{ color:C.text }}>{mission.name}</strong></div>
                   <div style={{ marginTop:12 }}><Btn variant='teal' onClick={()=>printPreFlight(mission,ac,pilot,CHECKLIST,pfChecked,mission.notams||'')}>Print / Save PDF Record</Btn></div>
                 </Card>
               )}
@@ -1781,7 +1781,7 @@ function MissionWorkspace({ mission, missions, setMissions, flights, setFlights,
           </div>
           <SectionHeader title="Flight Records" onAdd={canLog?openFlNew:null} addLabel="+ Log Flight" extra={canExport&&mFlights.length>0&&<Btn variant='teal' onClick={()=>exportCSV(mFlights,aircraft,pilots,missions)}>Export CSV</Btn>}/>
           <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-            {!mFlights.length && <Card style={{ padding:40, textAlign:'center' }}><span style={{ fontFamily:C.mono, fontSize:11, color:C.dim }}>No flights logged for this mission yet</span></Card>}
+            {!mFlights.length && <Card style={{ padding:40, textAlign:'center' }}><span style={{ fontFamily:C.mono, fontSize:13, color:C.dim }}>No flights logged for this mission yet</span></Card>}
             {[...mFlights].sort((a,b)=>b.date.localeCompare(a.date)).map(f=>{
               const isExp=flExpanded===f.id, inc=!f.durationMin;
               return(
@@ -1789,16 +1789,16 @@ function MissionWorkspace({ mission, missions, setMissions, flights, setFlights,
                   <div onClick={()=>setFlExpanded(isExp?null:f.id)} style={{ display:'flex', alignItems:'center', gap:10, padding:'11px 14px', cursor:'pointer', background:inc?`${C.orange}06`:'transparent' }}>
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginBottom:3 }}>
-                        <span style={{ fontFamily:C.mono, fontSize:11, color:C.dim }}>{f.date}</span>
+                        <span style={{ fontFamily:C.mono, fontSize:13, color:C.dim }}>{f.date}</span>
                         <span style={{ fontSize:13, color:C.text, fontWeight:500 }}>{f.location||'—'}</span>
                       </div>
-                      <div style={{ fontSize:11, color:C.dim, display:'flex', gap:12, flexWrap:'wrap', alignItems:'center' }}>
+                      <div style={{ fontSize:13, color:C.dim, display:'flex', gap:12, flexWrap:'wrap', alignItems:'center' }}>
                         <span style={{ fontFamily:C.mono, color:C.amber }}>{aTail(f.aircraftId)}</span>
                         <span>{pName(f.pilotId)}</span>
                         {inc ? (
                           <span style={{ display:'flex', alignItems:'center', gap:5 }} onClick={e => e.stopPropagation()}>
-                            <input type="number" min="0" placeholder="min" value={inlineDur[f.id] !== undefined ? inlineDur[f.id] : ''} onChange={e => setInlineDur(d => ({ ...d, [f.id]: e.target.value }))} onBlur={e => { if (e.target.value) saveInlineDur(f, e.target.value); }} onKeyDown={e => { if (e.key==='Enter' && e.target.value) saveInlineDur(f, e.target.value); }} style={{ width:62, padding:'2px 6px', fontFamily:C.mono, fontSize:11, background:C.card2, border:`1px solid ${C.orange}60`, borderRadius:4, color:C.text }}/>
-                            <span style={{ fontSize:10, color:C.dim }}>min · Enter to save</span>
+                            <input type="number" min="0" placeholder="min" value={inlineDur[f.id] !== undefined ? inlineDur[f.id] : ''} onChange={e => setInlineDur(d => ({ ...d, [f.id]: e.target.value }))} onBlur={e => { if (e.target.value) saveInlineDur(f, e.target.value); }} onKeyDown={e => { if (e.key==='Enter' && e.target.value) saveInlineDur(f, e.target.value); }} style={{ width:62, padding:'2px 6px', fontFamily:C.mono, fontSize:13, background:C.card2, border:`1px solid ${C.orange}60`, borderRadius:4, color:C.text }}/>
+                            <span style={{ fontSize:12, color:C.dim }}>min · Enter to save</span>
                           </span>
                         ) : (<span style={{ fontFamily:C.mono }}>{f.durationMin}min</span>)}
                         <span>{f.takeoffs}/{f.landings} T/L</span>
@@ -1807,15 +1807,15 @@ function MissionWorkspace({ mission, missions, setMissions, flights, setFlights,
                     <div style={{ display:'flex', gap:5, flexShrink:0 }}>
                       {(canEditLog||(canLog&&inc)) && <Btn variant='amber' onClick={e=>{e.stopPropagation();openFlEdit(f);}} xstyle={{ padding:'4px 9px', fontSize:10 }}>Edit</Btn>}
                       {canDeleteLog && <Btn variant='red' onClick={e=>{e.stopPropagation();delFl(f);}} xstyle={{ padding:'4px 9px', fontSize:10 }}>X</Btn>}
-                      <span style={{ color:C.dim, fontSize:11, paddingLeft:4, userSelect:'none' }}>{isExp?'▲':'▼'}</span>
+                      <span style={{ color:C.dim, fontSize:13, paddingLeft:4, userSelect:'none' }}>{isExp?'▲':'▼'}</span>
                     </div>
                   </div>
                   {isExp && (
                     <div style={{ padding:'10px 14px', borderTop:`1px solid ${C.border}`, background:C.card2 }}>
                       <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(120px,1fr))', gap:10 }}>
-                        {[['Aircraft',aTail(f.aircraftId)],['Pilot',pName(f.pilotId)],['Duration',`${f.durationMin}min`],['T/L',`${f.takeoffs}/${f.landings}`],['Payload',f.payload||'—']].map(([l,v])=>(<div key={l}><div style={{ fontSize:9, color:C.dim, fontFamily:C.mono, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:2 }}>{l}</div><div style={{ fontSize:11, color:C.text, fontFamily:C.mono }}>{v}</div></div>))}
+                        {[['Aircraft',aTail(f.aircraftId)],['Pilot',pName(f.pilotId)],['Duration',`${f.durationMin}min`],['T/L',`${f.takeoffs}/${f.landings}`],['Payload',f.payload||'—']].map(([l,v])=>(<div key={l}><div style={{ fontSize:13, color:C.dim, fontFamily:C.mono, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:2 }}>{l}</div><div style={{ fontSize:13, color:C.text, fontFamily:C.mono }}>{v}</div></div>))}
                       </div>
-                      {f.notes && <div style={{ fontSize:11, color:C.mid, marginTop:8, paddingTop:8, borderTop:`1px solid ${C.border}`, lineHeight:1.6 }}>{f.notes}</div>}
+                      {f.notes && <div style={{ fontSize:13, color:C.mid, marginTop:8, paddingTop:8, borderTop:`1px solid ${C.border}`, lineHeight:1.6 }}>{f.notes}</div>}
                     </div>
                   )}
                 </Card>
@@ -1896,7 +1896,7 @@ function Missions({ missions, setMissions, aircraft, setAircraft, pilots, setPil
           <div style={{ display:'flex', alignItems:'center', marginBottom:18, borderBottom:`1px solid ${C.border}`, gap:8, paddingBottom:6 }}>
             <div style={{ display:'flex', gap:0, background:C.card, border:`1px solid ${C.border}`, borderRadius:6, overflow:'hidden' }}>
               {[['list','List'], ['calendar','Calendar']].map(([v, l]) => (
-                <button key={v} onClick={() => setView(v)} style={{ background: view===v ? C.amber : 'transparent', color: view===v ? '#000' : C.mid, border:'none', padding:'6px 14px', fontSize:11, fontFamily:C.mono, fontWeight: view===v ? 700 : 400, cursor:'pointer', letterSpacing:'0.06em' }}>{l}</button>
+                <button key={v} onClick={() => setView(v)} style={{ background: view===v ? C.amber : 'transparent', color: view===v ? '#000' : C.mid, border:'none', padding:'6px 14px', fontSize:13, fontFamily:C.mono, fontWeight: view===v ? 700 : 400, cursor:'pointer', letterSpacing:'0.06em' }}>{l}</button>
               ))}
             </div>
             <div style={{ marginLeft:'auto', display:'flex', gap:6 }}>
@@ -1909,7 +1909,7 @@ function Missions({ missions, setMissions, aircraft, setAircraft, pilots, setPil
           {view === 'calendar' ? (<CalendarView missions={missions} aircraft={aircraft} pilots={pilots} onOpenMission={id => setWorkMissionId(id)}/>) : (<>
           <div style={{ display:'flex', gap:8, marginBottom:12, flexWrap:'wrap' }}>
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name, location, pilot, aircraft…" style={{ flex:1, minWidth:180, padding:'7px 12px', background:C.card2, border:`1px solid ${C.border2}`, borderRadius:6, color:C.text, fontFamily:C.mono, fontSize:11 }}/>
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ padding:'7px 12px', background:C.card2, border:`1px solid ${C.border2}`, borderRadius:6, color:C.text, fontFamily:C.mono, fontSize:11, minWidth:120 }}><option value="all">All statuses</option><option value="planned">Planned</option><option value="approved">Approved</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select>
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ padding:'7px 12px', background:C.card2, border:`1px solid ${C.border2}`, borderRadius:6, color:C.text, fontFamily:C.mono, fontSize:13, minWidth:120 }}><option value="all">All statuses</option><option value="planned">Planned</option><option value="approved">Approved</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select>
             {(search||statusFilter!=='all') && <Btn onClick={() => { setSearch(''); setStatusFilter('all'); }}>Clear</Btn>}
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
@@ -1922,15 +1922,15 @@ function Missions({ missions, setMissions, aircraft, setAircraft, pilots, setPil
                   <div style={{ padding:'13px 16px', display:'flex', alignItems:'center', gap:12, flexWrap:'wrap' }}>
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap', marginBottom:4 }}>
-                        <span style={{ fontFamily:C.mono, fontSize:11, color:C.dim }}>{m.date} {m.time}</span>
+                        <span style={{ fontFamily:C.mono, fontSize:13, color:C.dim }}>{m.date} {m.time}</span>
                         <span style={{ fontSize:13, fontWeight:500, color:C.text }}>{m.name}</span>
                         <Badge status={m.status}/>
                         <ConflictBadge mission={m} missions={missions} flights={flights}/>
                       </div>
-                      <div style={{ fontSize:11, color:C.dim, display:'flex', gap:12, flexWrap:'wrap', alignItems:'center' }}>
+                      <div style={{ fontSize:13, color:C.dim, display:'flex', gap:12, flexWrap:'wrap', alignItems:'center' }}>
                         <span>{m.location}</span><span>{aTail(m.aircraftId)}</span><span>{pName(m.pilotId)}</span><span>{m.altFt}ft AGL</span>
                         {mf.length>0 && <span style={{ color:C.green, fontFamily:C.mono }}>{mf.length} flight{mf.length!==1?'s':''} · {mf.reduce((a,f)=>a+f.durationMin,0)}min</span>}
-                        {rel && <span style={{ color:C.dim, fontFamily:C.mono, fontSize:10, marginLeft:'auto' }}>{rel}</span>}
+                        {rel && <span style={{ color:C.dim, fontFamily:C.mono, fontSize:12, marginLeft:'auto' }}>{rel}</span>}
                       </div>
                     </div>
                     <div style={{ display:'flex', gap:6, flexShrink:0 }}>
@@ -1943,8 +1943,8 @@ function Missions({ missions, setMissions, aircraft, setAircraft, pilots, setPil
                 </Card>
               );
             })}
-            {!filtered.length && missions.length === 0 && (<Card style={{ padding:48, textAlign:'center' }}><div style={{ fontFamily:C.mono, fontSize:11, color:C.dim, marginBottom:16 }}>No missions yet — create your first one to get started</div>{canCreate && <Btn variant='primary' onClick={openNew}>+ New Mission</Btn>}</Card>)}
-            {!filtered.length && missions.length > 0 && (<Card style={{ padding:32, textAlign:'center' }}><div style={{ fontFamily:C.mono, fontSize:11, color:C.dim, marginBottom:12 }}>No missions match your search</div><Btn onClick={() => { setSearch(''); setStatusFilter('all'); }}>Clear filters</Btn></Card>)}
+            {!filtered.length && missions.length === 0 && (<Card style={{ padding:48, textAlign:'center' }}><div style={{ fontFamily:C.mono, fontSize:13, color:C.dim, marginBottom:16 }}>No missions yet — create your first one to get started</div>{canCreate && <Btn variant='primary' onClick={openNew}>+ New Mission</Btn>}</Card>)}
+            {!filtered.length && missions.length > 0 && (<Card style={{ padding:32, textAlign:'center' }}><div style={{ fontFamily:C.mono, fontSize:13, color:C.dim, marginBottom:12 }}>No missions match your search</div><Btn onClick={() => { setSearch(''); setStatusFilter('all'); }}>Clear filters</Btn></Card>)}
           </div>
           </>)}
         </div>
@@ -2027,7 +2027,7 @@ function Assets({ aircraft, setAircraft, batteries, setBatteries, equipment, set
         <StatCard label="Maint Due" value={maintDue} sub="within 30d" accent={maintDue>0?C.orange:C.dim}/>
       </div>
       <div style={{display:'flex',gap:0,marginBottom:20,borderBottom:`1px solid ${C.border}`}}>
-        {SUBS.map(s=>{const col=SUB_COL[s],active=sub===s;return(<button key={s} onClick={()=>setSub(s)} style={{background:'none',border:'none',padding:'9px 16px',fontSize:11,fontFamily:C.mono,letterSpacing:'0.06em',textTransform:'uppercase',color:active?col:C.dim,borderBottom:active?`2px solid ${col}`:'2px solid transparent',marginBottom:-1,cursor:'pointer'}}>{s}</button>);})}
+        {SUBS.map(s=>{const col=SUB_COL[s],active=sub===s;return(<button key={s} onClick={()=>setSub(s)} style={{background:'none',border:'none',padding:'9px 16px',fontSize:13,fontFamily:C.mono,letterSpacing:'0.06em',textTransform:'uppercase',color:active?col:C.dim,borderBottom:active?`2px solid ${col}`:'2px solid transparent',marginBottom:-1,cursor:'pointer'}}>{s}</button>);})}
       </div>
 
       {sub==='Aircraft'&&(<div>
@@ -2036,15 +2036,15 @@ function Assets({ aircraft, setAircraft, batteries, setBatteries, equipment, set
           {aircraft.map(ac=>{const days=daysTo(ac.nextMaint),soon=days!==null&&days<30&&days>0;return(
             <Card key={ac.id} style={{padding:0,overflow:'hidden'}}>
               <div style={{padding:'12px 16px',borderBottom:`1px solid ${C.border}`,display:'flex',justifyContent:'space-between',alignItems:'center',background:ac.status==='airworthy'?`${C.green}08`:ac.status==='maintenance'?`${C.amber}08`:`${C.red}08`}}>
-                <div><div style={{fontFamily:C.mono,fontSize:13,fontWeight:700,color:C.amber}}>{ac.tail}</div><div style={{fontSize:11,color:C.mid,marginTop:2}}>{ac.model}</div></div>
+                <div><div style={{fontFamily:C.mono,fontSize:13,fontWeight:700,color:C.amber}}>{ac.tail}</div><div style={{fontSize:13,color:C.mid,marginTop:2}}>{ac.model}</div></div>
                 <Badge status={ac.status}/>
               </div>
               <div style={{padding:'12px 16px'}}>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:9,marginBottom:10}}>
-                  {[['Type',ac.type],['Hours',Number(ac.hours).toFixed(1)+'h'],['Weight',ac.weightLbs+'lbs'],['Max Alt',ac.maxAltFt+'ft'],['Last Maint',ac.lastMaint||'—'],['Next Maint',ac.nextMaint||'—']].map(([l,v])=>(<div key={l}><div style={{fontSize:9,color:C.dim,fontFamily:C.mono,textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:2}}>{l}</div><div style={{fontSize:11,color:C.text,fontFamily:C.mono}}>{v}</div></div>))}
+                  {[['Type',ac.type],['Hours',Number(ac.hours).toFixed(1)+'h'],['Weight',ac.weightLbs+'lbs'],['Max Alt',ac.maxAltFt+'ft'],['Last Maint',ac.lastMaint||'—'],['Next Maint',ac.nextMaint||'—']].map(([l,v])=>(<div key={l}><div style={{fontSize:13,color:C.dim,fontFamily:C.mono,textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:2}}>{l}</div><div style={{fontSize:13,color:C.text,fontFamily:C.mono}}>{v}</div></div>))}
                 </div>
-                {soon&&<div style={{background:`${C.amber}15`,border:`1px solid ${C.amber}40`,borderRadius:4,padding:'5px 10px',fontSize:10,color:C.amber,fontFamily:C.mono,marginBottom:10}}>Maintenance due in {days} days</div>}
-                {ac.notes&&<div style={{fontSize:11,color:C.dim,marginBottom:10}}>{ac.notes}</div>}
+                {soon&&<div style={{background:`${C.amber}15`,border:`1px solid ${C.amber}40`,borderRadius:4,padding:'5px 10px',fontSize:12,color:C.amber,fontFamily:C.mono,marginBottom:10}}>Maintenance due in {days} days</div>}
+                {ac.notes&&<div style={{fontSize:13,color:C.dim,marginBottom:10}}>{ac.notes}</div>}
                 {canEditFleet&&<div style={{display:'flex',gap:6}}><Btn variant='amber' onClick={()=>openAcEdit(ac)} xstyle={{padding:'5px 10px',fontSize:10}}>Edit</Btn><Btn onClick={()=>delAc(ac)} xstyle={{padding:'5px 10px',fontSize:10}}>Remove</Btn></div>}
               </div>
             </Card>);})}
@@ -2072,17 +2072,17 @@ function Assets({ aircraft, setAircraft, batteries, setBatteries, equipment, set
           {batteries.map(b=>{const cycPct=Math.round(b.totalCycles/b.maxCycles*100),cycColor=cycPct>85?C.red:cycPct>65?C.amber:C.green,capColor=b.capacityPct<75?C.red:b.capacityPct<85?C.amber:C.green;return(
             <Card key={b.id} style={{padding:0,overflow:'hidden'}}>
               <div style={{padding:'11px 16px',borderBottom:`1px solid ${C.border}`,display:'flex',justifyContent:'space-between',alignItems:'center',background:(SCOL[b.status]||C.dim)+'08'}}>
-                <div><div style={{fontFamily:C.mono,fontSize:12,fontWeight:700,color:C.amber}}>{b.label}</div><div style={{fontSize:10,color:C.dim,marginTop:2}}>{aTail(b.aircraftId)}</div></div>
+                <div><div style={{fontFamily:C.mono,fontSize:12,fontWeight:700,color:C.amber}}>{b.label}</div><div style={{fontSize:12,color:C.dim,marginTop:2}}>{aTail(b.aircraftId)}</div></div>
                 <Badge status={b.status}/>
               </div>
               <div style={{padding:'12px 16px'}}>
                 {[['Capacity',`${b.capacityPct}%`,b.capacityPct,capColor],['Cycles',`${b.totalCycles}/${b.maxCycles}`,Math.min(cycPct,100),cycColor]].map(([lbl,val,pct,col])=>(
                   <div key={lbl} style={{marginBottom:12}}>
-                    <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}><span style={{fontSize:9,fontFamily:C.mono,color:C.dim,textTransform:'uppercase',letterSpacing:'0.1em'}}>{lbl}</span><span style={{fontSize:11,fontFamily:C.mono,color:col,fontWeight:700}}>{val}</span></div>
+                    <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}><span style={{fontSize:13,fontFamily:C.mono,color:C.dim,textTransform:'uppercase',letterSpacing:'0.1em'}}>{lbl}</span><span style={{fontSize:13,fontFamily:C.mono,color:col,fontWeight:700}}>{val}</span></div>
                     <div style={{height:5,background:C.border,borderRadius:3}}><div style={{height:'100%',width:`${pct}%`,background:col,borderRadius:3}}/></div>
                   </div>
                 ))}
-                {b.notes&&<div style={{fontSize:11,color:C.dim,marginBottom:10}}>{b.notes}</div>}
+                {b.notes&&<div style={{fontSize:13,color:C.dim,marginBottom:10}}>{b.notes}</div>}
                 {canEditBat&&<div style={{display:'flex',gap:6,flexWrap:'wrap'}}><Btn variant='blue' onClick={()=>cycleBt(b.id)} xstyle={{padding:'5px 10px',fontSize:10}}>+ Cycle</Btn><Btn variant='amber' onClick={()=>openBtEdit(b)} xstyle={{padding:'5px 10px',fontSize:10}}>Edit</Btn><Btn onClick={()=>delBt(b)} xstyle={{padding:'5px 10px',fontSize:10}}>X</Btn></div>}
               </div>
             </Card>);})}
@@ -2110,17 +2110,17 @@ function Assets({ aircraft, setAircraft, batteries, setBatteries, equipment, set
               <div style={{padding:'12px 16px',borderBottom:`1px solid ${C.border}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                 <div style={{display:'flex',alignItems:'center',gap:10}}>
                   <div style={{width:38,height:38,borderRadius:'50%',background:`${C.purple}18`,border:`1.5px solid ${C.purple}40`,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:C.mono,fontSize:13,fontWeight:700,color:C.purple,flexShrink:0}}>{p.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
-                  <div><div style={{fontSize:13,fontWeight:500,color:C.text}}>{p.name}</div><div style={{fontSize:10,color:C.dim,fontFamily:C.mono,marginTop:1}}>{p.cert} #{p.certNum||'—'}</div></div>
+                  <div><div style={{fontSize:13,fontWeight:500,color:C.text}}>{p.name}</div><div style={{fontSize:12,color:C.dim,fontFamily:C.mono,marginTop:1}}>{p.cert} #{p.certNum||'—'}</div></div>
                 </div>
                 <Badge status={p.status}/>
               </div>
               <div style={{padding:'12px 16px'}}>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
-                  {[['Cert Expiry',p.certExpiry||'—'],['Last Flight',p.lastFlight||'—'],['Logged Hrs',loggedHrs(p.id)+'h'],['Total Hrs',Number(p.hours).toFixed(1)+'h'],['Recurrent Done',p.recurrentDate||'—'],['Recurrent Due',p.recurrentDue||'—']].map(([l,v])=>(<div key={l}><div style={{fontSize:9,color:C.dim,fontFamily:C.mono,textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:2}}>{l}</div><div style={{fontSize:11,color:C.text,fontFamily:C.mono}}>{v}</div></div>))}
+                  {[['Cert Expiry',p.certExpiry||'—'],['Last Flight',p.lastFlight||'—'],['Logged Hrs',loggedHrs(p.id)+'h'],['Total Hrs',Number(p.hours).toFixed(1)+'h'],['Recurrent Done',p.recurrentDate||'—'],['Recurrent Due',p.recurrentDue||'—']].map(([l,v])=>(<div key={l}><div style={{fontSize:13,color:C.dim,fontFamily:C.mono,textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:2}}>{l}</div><div style={{fontSize:13,color:C.text,fontFamily:C.mono}}>{v}</div></div>))}
                 </div>
-                {soon&&<div style={{background:`${C.amber}15`,border:`1px solid ${C.amber}40`,borderRadius:4,padding:'5px 10px',fontSize:10,color:C.amber,fontFamily:C.mono,marginBottom:10}}>Cert expires in {days} days</div>}
-                {exp&&<div style={{background:`${C.red}15`,border:`1px solid ${C.red}40`,borderRadius:4,padding:'5px 10px',fontSize:10,color:C.red,fontFamily:C.mono,marginBottom:10}}>Cert EXPIRED {Math.abs(days)} days ago</div>}
-                {(()=>{ if(!p.recurrentDue) return null; const rd=daysTo(p.recurrentDue); if(rd===null) return null; if(rd<0) return <div style={{background:`${C.red}15`,border:`1px solid ${C.red}40`,borderRadius:4,padding:'5px 10px',fontSize:10,color:C.red,fontFamily:C.mono,marginBottom:10}}>Recurrent training OVERDUE {Math.abs(rd)} days</div>; if(rd<60) return <div style={{background:`${C.orange}15`,border:`1px solid ${C.orange}40`,borderRadius:4,padding:'5px 10px',fontSize:10,color:C.orange,fontFamily:C.mono,marginBottom:10}}>Recurrent training due in {rd} days</div>; return null; })()}
+                {soon&&<div style={{background:`${C.amber}15`,border:`1px solid ${C.amber}40`,borderRadius:4,padding:'5px 10px',fontSize:12,color:C.amber,fontFamily:C.mono,marginBottom:10}}>Cert expires in {days} days</div>}
+                {exp&&<div style={{background:`${C.red}15`,border:`1px solid ${C.red}40`,borderRadius:4,padding:'5px 10px',fontSize:12,color:C.red,fontFamily:C.mono,marginBottom:10}}>Cert EXPIRED {Math.abs(days)} days ago</div>}
+                {(()=>{ if(!p.recurrentDue) return null; const rd=daysTo(p.recurrentDue); if(rd===null) return null; if(rd<0) return <div style={{background:`${C.red}15`,border:`1px solid ${C.red}40`,borderRadius:4,padding:'5px 10px',fontSize:12,color:C.red,fontFamily:C.mono,marginBottom:10}}>Recurrent training OVERDUE {Math.abs(rd)} days</div>; if(rd<60) return <div style={{background:`${C.orange}15`,border:`1px solid ${C.orange}40`,borderRadius:4,padding:'5px 10px',fontSize:12,color:C.orange,fontFamily:C.mono,marginBottom:10}}>Recurrent training due in {rd} days</div>; return null; })()}
                 {canEditPilots&&<div style={{display:'flex',gap:6}}><Btn variant='amber' onClick={()=>openPlEdit(p)} xstyle={{padding:'5px 10px',fontSize:10}}>Edit</Btn><Btn onClick={()=>delPl(p)} xstyle={{padding:'5px 10px',fontSize:10}}>Remove</Btn></div>}
               </div>
             </Card>);})}
@@ -2145,11 +2145,11 @@ function Assets({ aircraft, setAircraft, batteries, setBatteries, equipment, set
         <SectionHeader title="Equipment & Payload Registry" onAdd={canEditEq?openEqNew:null} addLabel="+ Add Item"/>
         <Card style={{padding:0}}>
           <DataTable headers={['Name','Type','Category','Aircraft','Serial','Status','Actions']} rows={equipment.map(eq=>[
-            <div key="n"><div style={{fontSize:12,color:C.text,fontWeight:500}}>{eq.name}</div>{eq.notes&&<div style={{fontSize:10,color:C.dim,marginTop:2}}>{eq.notes}</div>}</div>,
-            <span key="t" style={{fontSize:11,color:C.mid}}>{eq.type}</span>,
-            <span key="c" style={{fontSize:11,color:C.mid}}>{eq.category}</span>,
-            <span key="a" style={{fontFamily:C.mono,fontSize:11,color:C.amber}}>{aTail(eq.aircraftId)}</span>,
-            <span key="s" style={{fontFamily:C.mono,fontSize:11,color:C.dim}}>{eq.serialNum||'—'}</span>,
+            <div key="n"><div style={{fontSize:12,color:C.text,fontWeight:500}}>{eq.name}</div>{eq.notes&&<div style={{fontSize:12,color:C.dim,marginTop:2}}>{eq.notes}</div>}</div>,
+            <span key="t" style={{fontSize:13,color:C.mid}}>{eq.type}</span>,
+            <span key="c" style={{fontSize:13,color:C.mid}}>{eq.category}</span>,
+            <span key="a" style={{fontFamily:C.mono,fontSize:13,color:C.amber}}>{aTail(eq.aircraftId)}</span>,
+            <span key="s" style={{fontFamily:C.mono,fontSize:13,color:C.dim}}>{eq.serialNum||'—'}</span>,
             <Badge key="st" status={eq.status}/>,
             <div key="ac" style={{display:'flex',gap:5}}>{canEditEq&&<Btn variant='amber' onClick={()=>openEqEdit(eq)} xstyle={{padding:'4px 9px',fontSize:10}}>Edit</Btn>}{canEditEq&&<Btn variant='red' onClick={()=>delEq(eq)} xstyle={{padding:'4px 9px',fontSize:10}}>X</Btn>}</div>,
           ])}/>
@@ -2185,15 +2185,15 @@ function Assets({ aircraft, setAircraft, batteries, setBatteries, equipment, set
               {sorted.map((ev,i)=>{const col=urgColor(ev.days);return(
                 <Card key={i} style={{padding:'13px 16px',borderLeft:`3px solid ${col}`}}>
                   <div style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
-                    <div style={{width:28,height:28,borderRadius:6,background:(catColor[ev.cat]||C.dim)+'18',border:`1px solid ${(catColor[ev.cat]||C.dim)}40`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,flexShrink:0}}>{catIcon[ev.cat]}</div>
-                    <div style={{flex:1,minWidth:0}}><div style={{fontSize:10,fontFamily:C.mono,color:catColor[ev.cat]||C.dim,textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:2}}>{ev.type}</div><div style={{fontSize:13,color:C.text}}>{ev.label}</div></div>
+                    <div style={{width:28,height:28,borderRadius:6,background:(catColor[ev.cat]||C.dim)+'18',border:`1px solid ${(catColor[ev.cat]||C.dim)}40`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,flexShrink:0}}>{catIcon[ev.cat]}</div>
+                    <div style={{flex:1,minWidth:0}}><div style={{fontSize:12,fontFamily:C.mono,color:catColor[ev.cat]||C.dim,textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:2}}>{ev.type}</div><div style={{fontSize:13,color:C.text}}>{ev.label}</div></div>
                     <div style={{textAlign:'right',flexShrink:0}}>
-                      {ev.custom?<div style={{fontSize:11,fontFamily:C.mono,color:C.amber}}>Check needed<br/><span style={{fontSize:10,color:C.dim}}>{ev.cycPct}% of max cycles</span></div>
-                        :<div><div style={{fontFamily:C.mono,fontSize:11,color:C.dim,marginBottom:4}}>{ev.date}</div><span style={{display:'inline-block',background:`${col}18`,border:`1px solid ${col}44`,color:col,borderRadius:4,padding:'2px 8px',fontSize:10,fontFamily:C.mono,fontWeight:700,textTransform:'uppercase',whiteSpace:'nowrap'}}>{ev.days!==null&&ev.days>=0?`${ev.days}d `:ev.days!==null?`${Math.abs(ev.days)}d overdue `:''}{urgLabel(ev.days)}</span></div>}
+                      {ev.custom?<div style={{fontSize:13,fontFamily:C.mono,color:C.amber}}>Check needed<br/><span style={{fontSize:12,color:C.dim}}>{ev.cycPct}% of max cycles</span></div>
+                        :<div><div style={{fontFamily:C.mono,fontSize:13,color:C.dim,marginBottom:4}}>{ev.date}</div><span style={{display:'inline-block',background:`${col}18`,border:`1px solid ${col}44`,color:col,borderRadius:4,padding:'2px 8px',fontSize:12,fontFamily:C.mono,fontWeight:700,textTransform:'uppercase',whiteSpace:'nowrap'}}>{ev.days!==null&&ev.days>=0?`${ev.days}d `:ev.days!==null?`${Math.abs(ev.days)}d overdue `:''}{urgLabel(ev.days)}</span></div>}
                     </div>
                   </div>
                 </Card>);})}
-              {!events.length&&<Card style={{padding:40,textAlign:'center'}}><span style={{fontFamily:C.mono,fontSize:11,color:C.green}}>No maintenance events tracked.</span></Card>}
+              {!events.length&&<Card style={{padding:40,textAlign:'center'}}><span style={{fontFamily:C.mono,fontSize:13,color:C.green}}>No maintenance events tracked.</span></Card>}
             </div>
           </div>
         );
@@ -2236,7 +2236,7 @@ function Analytics({ flights, aircraft, pilots, missions, activeUser }) {
     return () => { Object.keys(chartInst.current).forEach(k => destroy(k)); };
   }, [chartReady, flights, aircraft, pilots, missions]);
   const totHrs = flights.reduce((a,f) => a + f.durationMin/60, 0);
-  if (!chartReady) return <div style={{ padding:60, textAlign:'center', fontFamily:C.mono, fontSize:11, color:C.dim }}>Loading Chart.js…</div>;
+  if (!chartReady) return <div style={{ padding:60, textAlign:'center', fontFamily:C.mono, fontSize:13, color:C.dim }}>Loading Chart.js…</div>;
   return (
     <div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(130px,1fr))', gap:10, marginBottom:22 }}>
@@ -2245,19 +2245,19 @@ function Analytics({ flights, aircraft, pilots, missions, activeUser }) {
         <StatCard label="Avg Duration" value={flights.length?Math.round(flights.reduce((a,f)=>a+f.durationMin,0)/flights.length)+'min':'—'} accent={C.green}/>
       </div>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:14 }}>
-        <Card style={{ padding:'16px 20px' }}><div style={{ fontSize:10, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:14 }}>Monthly Flight Hours</div><div style={{ height:220 }}><canvas ref={refMonthly}/></div></Card>
-        <Card style={{ padding:'16px 20px' }}><div style={{ fontSize:10, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:14 }}>Aircraft Utilization</div><div style={{ height:220 }}><canvas ref={refAcUtil}/></div></Card>
+        <Card style={{ padding:'16px 20px' }}><div style={{ fontSize:12, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:14 }}>Monthly Flight Hours</div><div style={{ height:220 }}><canvas ref={refMonthly}/></div></Card>
+        <Card style={{ padding:'16px 20px' }}><div style={{ fontSize:12, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:14 }}>Aircraft Utilization</div><div style={{ height:220 }}><canvas ref={refAcUtil}/></div></Card>
       </div>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:14 }}>
-        <Card style={{ padding:'16px 20px' }}><div style={{ fontSize:10, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:14 }}>Pilot Hours Breakdown</div><div style={{ height:200 }}><canvas ref={refPilotHrs}/></div></Card>
-        <Card style={{ padding:'16px 20px' }}><div style={{ fontSize:10, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:14 }}>Monthly Operations</div><div style={{ height:200 }}><canvas ref={refOpType}/></div></Card>
+        <Card style={{ padding:'16px 20px' }}><div style={{ fontSize:12, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:14 }}>Pilot Hours Breakdown</div><div style={{ height:200 }}><canvas ref={refPilotHrs}/></div></Card>
+        <Card style={{ padding:'16px 20px' }}><div style={{ fontSize:12, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:14 }}>Monthly Operations</div><div style={{ height:200 }}><canvas ref={refOpType}/></div></Card>
       </div>
       {missions && missions.filter(m => m.riskScore != null).length > 0 && (
         <Card style={{ padding:'16px 20px' }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
-            <div style={{ fontSize:10, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase' }}>Risk Score Trend (Scored Missions)</div>
+            <div style={{ fontSize:12, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase' }}>Risk Score Trend (Scored Missions)</div>
             <div style={{ display:'flex', gap:10 }}>
-              {RISK_LEVELS.map(rl => (<div key={rl.label} style={{ display:'flex', alignItems:'center', gap:5, fontSize:9, fontFamily:C.mono, color:rl.color }}><div style={{ width:8, height:8, borderRadius:'50%', background:rl.color }}/>{rl.label}</div>))}
+              {RISK_LEVELS.map(rl => (<div key={rl.label} style={{ display:'flex', alignItems:'center', gap:5, fontSize:13, fontFamily:C.mono, color:rl.color }}><div style={{ width:8, height:8, borderRadius:'50%', background:rl.color }}/>{rl.label}</div>))}
             </div>
           </div>
           <div style={{ height:220 }}><canvas ref={refRisk}/></div>
@@ -2310,11 +2310,11 @@ function Incidents({ incidents, setIncidents, aircraft, pilots, activeUser }) {
                 <div style={{ width:4, borderRadius:2, alignSelf:'stretch', background:col, flexShrink:0, minHeight:40 }}/>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginBottom:4 }}>
-                    <span style={{ fontFamily:C.mono, fontSize:11, color:C.dim }}>{inc.date}</span>
+                    <span style={{ fontFamily:C.mono, fontSize:13, color:C.dim }}>{inc.date}</span>
                     <span style={{ fontSize:13, fontWeight:500, color:C.text }}>{inc.type} Incident</span>
                     <Badge status={inc.severity}/><Badge status={inc.status}/>
                   </div>
-                  <div style={{ fontSize:11, color:C.dim, marginBottom:8 }}>{inc.location} · {aTail(inc.aircraftId)} · {pName(inc.pilotId)}</div>
+                  <div style={{ fontSize:13, color:C.dim, marginBottom:8 }}>{inc.location} · {aTail(inc.aircraftId)} · {pName(inc.pilotId)}</div>
                   <div style={{ fontSize:12, color:C.mid, lineHeight:1.6, marginBottom:12, maxHeight:60, overflow:'hidden' }}>{inc.description}</div>
                   <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
                     <Btn variant='blue' onClick={() => setViewInc(incidents.find(i => i.id===inc.id))} xstyle={{ padding:'5px 12px', fontSize:10 }}>View</Btn>
@@ -2329,7 +2329,7 @@ function Incidents({ incidents, setIncidents, aircraft, pilots, activeUser }) {
             </Card>
           );
         })}
-        {!sorted.length && <Card style={{ padding:40, textAlign:'center' }}><span style={{ fontFamily:C.mono, fontSize:11, color:C.green }}>No incidents recorded — good flying!</span></Card>}
+        {!sorted.length && <Card style={{ padding:40, textAlign:'center' }}><span style={{ fontFamily:C.mono, fontSize:13, color:C.green }}>No incidents recorded — good flying!</span></Card>}
       </div>
       {modal && (
         <Modal title="Report Incident" onClose={() => setModal(false)} wide>
@@ -2349,7 +2349,7 @@ function Incidents({ incidents, setIncidents, aircraft, pilots, activeUser }) {
       {viewInc && (
         <Modal title={`Incident — ${viewInc.type} · ${viewInc.date}`} onClose={() => setViewInc(null)} wide>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginBottom:16, padding:14, background:C.card2, borderRadius:8 }}>
-            {[['Date',viewInc.date],['Location',viewInc.location],['Type',viewInc.type],['Severity',viewInc.severity.toUpperCase()],['Aircraft',aTail(viewInc.aircraftId)],['Pilot',pName(viewInc.pilotId)]].map(([l,v]) => (<div key={l}><div style={{ fontSize:9, fontFamily:C.mono, color:C.dim, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:3 }}>{l}</div><div style={{ fontSize:12, color:C.text }}>{v}</div></div>))}
+            {[['Date',viewInc.date],['Location',viewInc.location],['Type',viewInc.type],['Severity',viewInc.severity.toUpperCase()],['Aircraft',aTail(viewInc.aircraftId)],['Pilot',pName(viewInc.pilotId)]].map(([l,v]) => (<div key={l}><div style={{ fontSize:13, fontFamily:C.mono, color:C.dim, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:3 }}>{l}</div><div style={{ fontSize:12, color:C.text }}>{v}</div></div>))}
           </div>
           <div style={{ fontSize:12, color:C.mid, lineHeight:1.7, marginBottom:16, whiteSpace:'pre-wrap' }}>{viewInc.description}</div>
           {viewInc.asrs && <div style={{ background:C.card2, border:`1px solid ${C.purple}30`, borderRadius:6, padding:14, fontSize:12, color:C.text, lineHeight:1.8, whiteSpace:'pre-wrap', marginBottom:16 }}>{viewInc.asrs}</div>}
@@ -2400,29 +2400,29 @@ Be direct, professional, concise. Flag safety/compliance issues.`;
         <div style={{ width:36, height:36, borderRadius:8, background:`${C.purple}18`, border:`1px solid ${C.purple}40`, display:'flex', alignItems:'center', justifyContent:'center' }}>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" stroke={C.purple} strokeWidth="1.5"/><path d="M6 9h6M9 6v6" stroke={C.purple} strokeWidth="1.5" strokeLinecap="round"/></svg>
         </div>
-        <div><div style={{ fontFamily:C.mono, fontSize:12, fontWeight:700, color:C.purple }}>EWEB UAS AI</div><div style={{ fontSize:10, color:C.dim, marginTop:1 }}>Claude · {flights.length} flights · {aircraft.length} aircraft</div></div>
-        {messages.length > 0 && <button onClick={() => setMessages([])} style={{ marginLeft:'auto', background:'none', border:`1px solid ${C.border2}`, color:C.dim, borderRadius:4, padding:'4px 10px', fontSize:10, fontFamily:C.mono, cursor:'pointer' }}>Clear</button>}
+        <div><div style={{ fontFamily:C.mono, fontSize:12, fontWeight:700, color:C.purple }}>EWEB UAS AI</div><div style={{ fontSize:12, color:C.dim, marginTop:1 }}>Claude · {flights.length} flights · {aircraft.length} aircraft</div></div>
+        {messages.length > 0 && <button onClick={() => setMessages([])} style={{ marginLeft:'auto', background:'none', border:`1px solid ${C.border2}`, color:C.dim, borderRadius:4, padding:'4px 10px', fontSize:12, fontFamily:C.mono, cursor:'pointer' }}>Clear</button>}
       </div>
       <div style={{ display:'flex', flexWrap:'wrap', gap:7, marginBottom:12 }}>
-        {QUICK_PROMPTS.map(qp => (<button key={qp.label} onClick={() => send(qp.prompt)} disabled={loading} style={{ background:'transparent', border:`1px solid ${C.purple}50`, color:C.purple, borderRadius:20, padding:'5px 13px', fontSize:11, fontFamily:C.mono, cursor:loading?'not-allowed':'pointer', opacity:loading?0.5:1, whiteSpace:'nowrap' }}>{qp.label}</button>))}
+        {QUICK_PROMPTS.map(qp => (<button key={qp.label} onClick={() => send(qp.prompt)} disabled={loading} style={{ background:'transparent', border:`1px solid ${C.purple}50`, color:C.purple, borderRadius:20, padding:'5px 13px', fontSize:13, fontFamily:C.mono, cursor:loading?'not-allowed':'pointer', opacity:loading?0.5:1, whiteSpace:'nowrap' }}>{qp.label}</button>))}
       </div>
       <Card style={{ flex:1, overflow:'hidden', display:'flex', flexDirection:'column', padding:0 }}>
         <div style={{ flex:1, overflowY:'auto', padding:16, display:'flex', flexDirection:'column', gap:12 }}>
           {!messages.length && (<div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:40, textAlign:'center' }}><div style={{ fontSize:14, color:C.mid, marginBottom:6 }}>AI ops assistant ready</div><div style={{ fontSize:12, color:C.dim, maxWidth:400, lineHeight:1.6 }}>Full ops context loaded. Ask anything or use the quick buttons above.</div></div>)}
           {messages.map((m, i) => (
             <div key={i} style={{ display:'flex', gap:10, flexDirection:m.role==='user'?'row-reverse':'row', alignItems:'flex-start' }}>
-              <div style={{ width:28, height:28, borderRadius:5, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:m.role==='user'?`${C.amber}18`:`${C.purple}18`, border:`1px solid ${m.role==='user'?C.amber:C.purple}30`, fontSize:10, fontWeight:700, fontFamily:C.mono, color:m.role==='user'?C.amber:C.purple }}>{m.role==='user' ? 'YOU' : 'AI'}</div>
+              <div style={{ width:28, height:28, borderRadius:5, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:m.role==='user'?`${C.amber}18`:`${C.purple}18`, border:`1px solid ${m.role==='user'?C.amber:C.purple}30`, fontSize:12, fontWeight:700, fontFamily:C.mono, color:m.role==='user'?C.amber:C.purple }}>{m.role==='user' ? 'YOU' : 'AI'}</div>
               <div style={{ maxWidth:'78%', background:m.role==='user'?`${C.amber}10`:C.card2, border:`1px solid ${m.role==='user'?C.amber+'30':C.border}`, borderRadius:m.role==='user'?'10px 3px 10px 10px':'3px 10px 10px 10px', padding:'9px 13px' }}>
                 <div style={{ fontSize:13, color:C.text, lineHeight:1.7, whiteSpace:'pre-wrap' }}>{m.content}</div>
               </div>
             </div>
           ))}
-          {loading && (<div style={{ display:'flex', gap:10, alignItems:'flex-start' }}><div style={{ width:28, height:28, borderRadius:5, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:`${C.purple}18`, border:`1px solid ${C.purple}30`, fontSize:10, fontWeight:700, fontFamily:C.mono, color:C.purple }}>AI</div><div style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:'3px 10px 10px 10px', padding:'12px 16px' }}><div style={{ display:'flex', gap:5 }}>{[0,1,2].map(i => <span key={i} style={{ width:6, height:6, borderRadius:'50%', background:C.purple, animation:`pulse 1.2s ease-in-out ${i*0.2}s infinite`, display:'block' }}/>)}</div></div></div>)}
+          {loading && (<div style={{ display:'flex', gap:10, alignItems:'flex-start' }}><div style={{ width:28, height:28, borderRadius:5, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:`${C.purple}18`, border:`1px solid ${C.purple}30`, fontSize:12, fontWeight:700, fontFamily:C.mono, color:C.purple }}>AI</div><div style={{ background:C.card2, border:`1px solid ${C.border}`, borderRadius:'3px 10px 10px 10px', padding:'12px 16px' }}><div style={{ display:'flex', gap:5 }}>{[0,1,2].map(i => <span key={i} style={{ width:6, height:6, borderRadius:'50%', background:C.purple, animation:`pulse 1.2s ease-in-out ${i*0.2}s infinite`, display:'block' }}/>)}</div></div></div>)}
           <div ref={bottomRef}/>
         </div>
         <div style={{ borderTop:`1px solid ${C.border}`, padding:12, display:'flex', gap:8 }}>
           <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key==='Enter' && !e.shiftKey && send(input)} placeholder="Ask about your operations…" style={{ flex:1, background:C.card2, border:`1px solid ${C.border2}`, color:C.text, borderRadius:8, padding:'10px 14px', fontFamily:C.sans, fontSize:13, outline:'none' }}/>
-          <button onClick={() => send(input)} disabled={loading || !input.trim()} style={{ background:loading||!input.trim()?C.border:C.purple, border:'none', color:loading||!input.trim()?C.dim:'#fff', borderRadius:8, padding:'10px 18px', fontFamily:C.mono, fontSize:11, fontWeight:700, cursor:loading||!input.trim()?'not-allowed':'pointer' }}>{loading ? '…' : 'Send'}</button>
+          <button onClick={() => send(input)} disabled={loading || !input.trim()} style={{ background:loading||!input.trim()?C.border:C.purple, border:'none', color:loading||!input.trim()?C.dim:'#fff', borderRadius:8, padding:'10px 18px', fontFamily:C.mono, fontSize:13, fontWeight:700, cursor:loading||!input.trim()?'not-allowed':'pointer' }}>{loading ? '…' : 'Send'}</button>
         </div>
       </Card>
     </div>
@@ -2438,7 +2438,7 @@ function RoleCheckboxes({ selected, onChange }) {
         const on = selected.includes(r), rc = ROLE_COLORS[r] || C.dim;
         return (<div key={r} onClick={() => toggle(r)} style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 10px', borderRadius:6, cursor:'pointer', background: on ? `${rc}18` : C.card, border:`1px solid ${on ? rc+'60' : C.border}`, transition:'all 0.12s' }}>
           <div style={{ width:14, height:14, borderRadius:3, flexShrink:0, border:`1.5px solid ${on ? rc : C.border2}`, background: on ? rc : 'transparent', display:'flex', alignItems:'center', justifyContent:'center' }}>{on && <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3L3 5L7 1" stroke="#000" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>}</div>
-          <span style={{ fontSize:11, color: on ? rc : C.mid, fontFamily:C.mono, fontWeight: on ? 700 : 400 }}>{r}</span>
+          <span style={{ fontSize:13, color: on ? rc : C.mid, fontFamily:C.mono, fontWeight: on ? 700 : 400 }}>{r}</span>
         </div>);
       })}
     </div>
@@ -2470,10 +2470,10 @@ function OrgRoles({ orgUsers, setOrgUsers, activeUserId, setActiveUserId, auditL
             <div style={{ flex:1 }}>
               <div style={{ fontSize:15, fontWeight:600, color:C.text, marginBottom:6 }}>{activeUser.name}</div>
               <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap', marginBottom:8 }}>
-                {(activeUser.roles||[]).map(r => (<span key={r} style={{ fontFamily:C.mono, fontSize:10, color:ROLE_COLORS[r]||C.dim, background:`${ROLE_COLORS[r]||C.dim}18`, border:`1px solid ${ROLE_COLORS[r]||C.dim}44`, borderRadius:4, padding:'2px 8px', fontWeight:700, textTransform:'uppercase' }}>{r}</span>))}
+                {(activeUser.roles||[]).map(r => (<span key={r} style={{ fontFamily:C.mono, fontSize:12, color:ROLE_COLORS[r]||C.dim, background:`${ROLE_COLORS[r]||C.dim}18`, border:`1px solid ${ROLE_COLORS[r]||C.dim}44`, borderRadius:4, padding:'2px 8px', fontWeight:700, textTransform:'uppercase' }}>{r}</span>))}
               </div>
               <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>
-                {ALL_PERMS.map(p => { const granted = activePerms.includes(p.id); return (<span key={p.id} style={{ fontSize:9, fontFamily:C.mono, color: granted ? C.green : C.dim, background: granted ? `${C.green}12` : 'transparent', border:`1px solid ${granted ? C.green+'30' : C.border}`, borderRadius:3, padding:'2px 6px', textDecoration: granted ? 'none' : 'line-through' }}>{p.label}</span>); })}
+                {ALL_PERMS.map(p => { const granted = activePerms.includes(p.id); return (<span key={p.id} style={{ fontSize:13, fontFamily:C.mono, color: granted ? C.green : C.dim, background: granted ? `${C.green}12` : 'transparent', border:`1px solid ${granted ? C.green+'30' : C.border}`, borderRadius:3, padding:'2px 6px', textDecoration: granted ? 'none' : 'line-through' }}>{p.label}</span>); })}
               </div>
             </div>
           </div>
@@ -2487,10 +2487,10 @@ function OrgRoles({ orgUsers, setOrgUsers, activeUserId, setActiveUserId, auditL
             <Card key={u.id} style={{ padding:0, overflow:'hidden', border:`1px solid ${isActive?rc+'60':C.border}` }}>
               <div style={{ padding:'11px 14px', borderBottom:`1px solid ${C.border}`, display:'flex', alignItems:'center', gap:10, background:isActive?`${rc}10`:'transparent' }}>
                 <div style={{ width:36, height:36, borderRadius:8, background:`${rc}18`, border:`1.5px solid ${rc}40`, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:C.mono, fontSize:12, fontWeight:700, color:rc, flexShrink:0 }}>{u.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
-                <div style={{ flex:1 }}><div style={{ fontSize:12, color:C.text, fontWeight:500 }}>{u.name}{isActive && <span style={{ marginLeft:6, fontSize:9, background:rc+'20', color:rc, borderRadius:3, padding:'1px 5px', fontFamily:C.mono }}>ACTIVE</span>}</div><div style={{ fontSize:10, color:C.dim, marginTop:1 }}>{u.email}</div></div>
+                <div style={{ flex:1 }}><div style={{ fontSize:12, color:C.text, fontWeight:500 }}>{u.name}{isActive && <span style={{ marginLeft:6, fontSize:13, background:rc+'20', color:rc, borderRadius:3, padding:'1px 5px', fontFamily:C.mono }}>ACTIVE</span>}</div><div style={{ fontSize:12, color:C.dim, marginTop:1 }}>{u.email}</div></div>
               </div>
               <div style={{ padding:'10px 14px' }}>
-                <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginBottom:8 }}>{(u.roles||[]).map(r => (<span key={r} style={{ fontSize:10, fontFamily:C.mono, color:ROLE_COLORS[r]||C.dim, background:`${ROLE_COLORS[r]||C.dim}18`, border:`1px solid ${ROLE_COLORS[r]||C.dim}30`, borderRadius:3, padding:'2px 6px' }}>{r}</span>))}</div>
+                <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginBottom:8 }}>{(u.roles||[]).map(r => (<span key={r} style={{ fontSize:12, fontFamily:C.mono, color:ROLE_COLORS[r]||C.dim, background:`${ROLE_COLORS[r]||C.dim}18`, border:`1px solid ${ROLE_COLORS[r]||C.dim}30`, borderRadius:3, padding:'2px 6px' }}>{r}</span>))}</div>
                 <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
                   {!isActive && <Btn variant='green' onClick={() => setActiveUserId(u.id)} xstyle={{ padding:'5px 10px', fontSize:10 }}>Sign In</Btn>}
                   <Btn variant='amber' onClick={() => openEdit(u)} xstyle={{ padding:'5px 10px', fontSize:10 }}>Edit</Btn>
@@ -2503,13 +2503,13 @@ function OrgRoles({ orgUsers, setOrgUsers, activeUserId, setActiveUserId, auditL
       </div>
       <SectionHeader title="Audit Log"/>
       <Card style={{ padding:0 }}>
-        {auditLog.length === 0 ? (<div style={{ padding:32, textAlign:'center', fontFamily:C.mono, fontSize:11, color:C.dim }}>No audit events recorded yet</div>) : (
+        {auditLog.length === 0 ? (<div style={{ padding:32, textAlign:'center', fontFamily:C.mono, fontSize:13, color:C.dim }}>No audit events recorded yet</div>) : (
           <div style={{ maxHeight:400, overflowY:'auto' }}>
             {auditLog.map((e,i) => (
               <div key={e.id||i} style={{ display:'flex', alignItems:'flex-start', gap:12, padding:'10px 16px', borderBottom:`1px solid ${C.border}20` }}>
                 <div style={{ width:7, height:7, borderRadius:'50%', background:C.amber, flexShrink:0, marginTop:5 }}/>
-                <div style={{ flex:1 }}><div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:2, flexWrap:'wrap' }}><span style={{ fontSize:12, color:C.text }}>{e.action}</span><span style={{ fontSize:10, color:C.dim, fontFamily:C.mono, background:C.card2, padding:'1px 6px', borderRadius:3 }}>{e.userName}</span></div>{e.details && <div style={{ fontSize:11, color:C.dim }}>{e.details}</div>}</div>
-                <div style={{ fontSize:10, color:C.dim, fontFamily:C.mono, flexShrink:0 }}>{new Date(e.ts).toLocaleDateString()}<br/>{new Date(e.ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}</div>
+                <div style={{ flex:1 }}><div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:2, flexWrap:'wrap' }}><span style={{ fontSize:12, color:C.text }}>{e.action}</span><span style={{ fontSize:12, color:C.dim, fontFamily:C.mono, background:C.card2, padding:'1px 6px', borderRadius:3 }}>{e.userName}</span></div>{e.details && <div style={{ fontSize:13, color:C.dim }}>{e.details}</div>}</div>
+                <div style={{ fontSize:12, color:C.dim, fontFamily:C.mono, flexShrink:0 }}>{new Date(e.ts).toLocaleDateString()}<br/>{new Date(e.ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}</div>
               </div>
             ))}
           </div>
@@ -2525,9 +2525,9 @@ function OrgRoles({ orgUsers, setOrgUsers, activeUserId, setActiveUserId, auditL
           <Field label="Roles"><RoleCheckboxes selected={form.roles||[]} onChange={roles => setForm(f => ({ ...f, roles }))}/></Field>
           {(form.roles||[]).length > 0 && (
             <div style={{ marginTop:12, padding:'12px 14px', background:C.card2, border:`1px solid ${C.border}`, borderRadius:6 }}>
-              <div style={{ fontSize:10, fontFamily:C.mono, color:C.dim, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:8 }}>Combined permissions from {(form.roles||[]).join(' + ')}</div>
+              <div style={{ fontSize:12, fontFamily:C.mono, color:C.dim, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:8 }}>Combined permissions from {(form.roles||[]).join(' + ')}</div>
               <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>
-                {ALL_PERMS.filter(p => userPerms({ roles:form.roles }).includes(p.id)).map(p => <span key={p.id} style={{ fontSize:10, color:C.green, background:`${C.green}12`, border:`1px solid ${C.green}30`, borderRadius:3, padding:'1px 6px', fontFamily:C.mono }}>{p.label}</span>)}
+                {ALL_PERMS.filter(p => userPerms({ roles:form.roles }).includes(p.id)).map(p => <span key={p.id} style={{ fontSize:12, color:C.green, background:`${C.green}12`, border:`1px solid ${C.green}30`, borderRadius:3, padding:'1px 6px', fontFamily:C.mono }}>{p.label}</span>)}
               </div>
             </div>
           )}
@@ -2575,7 +2575,7 @@ export default function App() {
 
   useEffect(() => {
     const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500&display=swap';
+    link.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap';
     link.rel = 'stylesheet';
     document.head.appendChild(link);
     (async () => {
@@ -2614,7 +2614,7 @@ export default function App() {
   useEffect(() => { if (ready) store.set('uas:audit', auditLog); }, [auditLog, ready]);
   useEffect(() => { if (ready) store.set('uas:templates', templates); }, [templates, ready]);
 
-  if (!ready) return (<div style={{ background:C.bg, minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:C.mono, color:C.dim, fontSize:11, letterSpacing:'0.1em' }}>INITIALIZING EWEB UAS OPS…</div>);
+  if (!ready) return (<div style={{ background:C.bg, minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:C.mono, color:C.dim, fontSize:13, letterSpacing:'0.1em' }}>INITIALIZING EWEB UAS OPS…</div>);
 
   const now = new Date();
   const timeStr = now.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', hour12:false });
@@ -2623,21 +2623,26 @@ export default function App() {
     <div style={{ position:'relative', background:C.bg, minHeight:'100vh', fontFamily:C.sans, color:C.text }}>
       <style>{`
         * { box-sizing:border-box; margin:0; padding:0; }
-        ::-webkit-scrollbar { width:4px; height:4px; }
-        ::-webkit-scrollbar-track { background:#0B0E14; }
-        ::-webkit-scrollbar-thumb { background:#263147; border-radius:2px; }
-        input, select, textarea { background:#0D1220 !important; border:1px solid #1C2438 !important; color:#E2E8F0 !important; border-radius:6px; padding:8px 12px; font-family:inherit; font-size:13px; outline:none; transition:border-color 0.15s; }
-        input:focus, select:focus, textarea:focus { border-color:#F59E0B !important; }
-        select option { background:#0D1220; }
-        button { cursor:pointer; font-family:inherit; transition:opacity 0.15s; }
-        button:hover { opacity:0.85; }
+        body { -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; font-feature-settings:'cv11','ss01','ss03'; }
+        ::-webkit-scrollbar { width:8px; height:8px; }
+        ::-webkit-scrollbar-track { background:#0B1020; }
+        ::-webkit-scrollbar-thumb { background:#3A4868; border-radius:4px; }
+        ::-webkit-scrollbar-thumb:hover { background:#4A5878; }
+        input, select, textarea { background:#0F1525 !important; border:1px solid #2A3550 !important; color:#F1F5F9 !important; border-radius:6px; padding:9px 12px; font-family:inherit; font-size:14px; outline:none; transition:border-color 0.15s, box-shadow 0.15s; line-height:1.4; }
+        input:focus, select:focus, textarea:focus { border-color:#FBBF24 !important; box-shadow:0 0 0 3px rgba(251,191,36,0.15) !important; }
+        select option { background:#0F1525; }
+        button { cursor:pointer; font-family:inherit; transition:opacity 0.15s, transform 0.1s; }
+        button:hover { opacity:0.88; }
+        button:active { transform:translateY(1px); }
         @keyframes pulse { 0%,100% { opacity:0.3 } 50% { opacity:1 } }
-        .leaflet-container { background: #0F1520 !important; font-family: inherit !important; }
-        .leaflet-control-zoom a { background: #141B28 !important; color: #94A3B8 !important; border-color: #1C2438 !important; }
-        .leaflet-control-zoom a:hover { background: #1C2438 !important; color: #E2E8F0 !important; }
-        .leaflet-popup-content-wrapper { background: #141B28 !important; color: #E2E8F0 !important; border: 1px solid #263147 !important; border-radius: 8px !important; box-shadow: 0 4px 16px rgba(0,0,0,0.5) !important; }
-        .leaflet-popup-tip { background: #141B28 !important; border: 1px solid #263147 !important; }
-        .leaflet-tooltip { background: #141B28 !important; color: #94A3B8 !important; border: 1px solid #263147 !important; font-family: 'Space Mono', monospace !important; font-size: 10px !important; }
+        body, #root { font-size: 14px; line-height: 1.5; }
+        h1, h2, h3, h4, h5, h6 { font-weight: 600; }
+        .leaflet-container { background: #141B2D !important; font-family: inherit !important; }
+        .leaflet-control-zoom a { background: #1A2236 !important; color: #CBD5E1 !important; border-color: #2A3550 !important; }
+        .leaflet-control-zoom a:hover { background: #2A3550 !important; color: #F1F5F9 !important; }
+        .leaflet-popup-content-wrapper { background: #1A2236 !important; color: #F1F5F9 !important; border: 1px solid #3A4868 !important; border-radius: 8px !important; box-shadow: 0 4px 16px rgba(0,0,0,0.5) !important; }
+        .leaflet-popup-tip { background: #1A2236 !important; border: 1px solid #3A4868 !important; }
+        .leaflet-tooltip { background: #1A2236 !important; color: #CBD5E1 !important; border: 1px solid #3A4868 !important; font-family: 'Inter', sans-serif !important; font-size: 12px !important; }
       `}</style>
       <header style={{ borderBottom:`1px solid ${C.border}`, padding:'0 24px', height:52, display:'flex', alignItems:'center', justifyContent:'space-between', background:C.bg, position:'sticky', top:0, zIndex:100 }}>
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
@@ -2653,20 +2658,20 @@ export default function App() {
             <circle cx="22" cy="13" r="2.2" fill={C.card} stroke={C.amber} strokeWidth="1.5"/>
           </svg>
           <span style={{ fontFamily:C.mono, fontWeight:700, fontSize:14, letterSpacing:'0.06em', color:C.amber }}>EWEB UAS OPS</span>
-          <span style={{ fontSize:10, color:C.orange, fontFamily:C.mono, background:`${C.orange}15`, border:`1px solid ${C.orange}40`, padding:'2px 7px', borderRadius:3 }}>PHASE V</span>
+          <span style={{ fontSize:12, color:C.orange, fontFamily:C.mono, background:`${C.orange}15`, border:`1px solid ${C.orange}40`, padding:'2px 7px', borderRadius:3 }}>PHASE V</span>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:16 }}>
           <div style={{ position:'relative' }}>
             <button onClick={() => setUserMenuOpen(o => !o)} style={{ display:'flex', alignItems:'center', gap:8, background:'transparent', border:`1px solid ${activeUser ? (ROLE_COLORS[primaryRole(activeUser)]||C.amber) : C.border}40`, borderRadius:6, padding:'5px 10px', cursor:'pointer' }}>
               {activeUser ? (<>
-                <div style={{ width:22, height:22, borderRadius:5, background:`${ROLE_COLORS[primaryRole(activeUser)]||C.amber}18`, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:C.mono, fontSize:9, fontWeight:700, color:ROLE_COLORS[primaryRole(activeUser)]||C.amber, flexShrink:0 }}>{activeUser.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
-                <div style={{ textAlign:'left' }}><div style={{ fontSize:11, color:C.text, lineHeight:1, fontFamily:C.mono }}>{activeUser.name.split(' ')[0]}</div><div style={{ fontSize:9, color:ROLE_COLORS[primaryRole(activeUser)]||C.amber, marginTop:1, fontFamily:C.mono }}>{primaryRole(activeUser)}</div></div>
-              </>) : (<span style={{ fontSize:11, color:C.dim, fontFamily:C.mono }}>Select user</span>)}
+                <div style={{ width:22, height:22, borderRadius:5, background:`${ROLE_COLORS[primaryRole(activeUser)]||C.amber}18`, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:C.mono, fontSize:13, fontWeight:700, color:ROLE_COLORS[primaryRole(activeUser)]||C.amber, flexShrink:0 }}>{activeUser.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
+                <div style={{ textAlign:'left' }}><div style={{ fontSize:13, color:C.text, lineHeight:1, fontFamily:C.mono }}>{activeUser.name.split(' ')[0]}</div><div style={{ fontSize:13, color:ROLE_COLORS[primaryRole(activeUser)]||C.amber, marginTop:1, fontFamily:C.mono }}>{primaryRole(activeUser)}</div></div>
+              </>) : (<span style={{ fontSize:13, color:C.dim, fontFamily:C.mono }}>Select user</span>)}
               <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style={{ marginLeft:2, opacity:0.5, transform: userMenuOpen ? 'rotate(180deg)' : 'none' }}><path d="M1 1L5 5L9 1" stroke={C.mid} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
             {userMenuOpen && (
               <div style={{ position:'absolute', right:0, top:'calc(100% + 6px)', background:C.card2, border:`1px solid ${C.border2}`, borderRadius:8, minWidth:230, zIndex:500, boxShadow:'0 8px 24px rgba(0,0,0,0.5)', overflow:'hidden' }}>
-                <div style={{ padding:'8px 12px 6px', fontSize:9, fontFamily:C.mono, color:C.dim, letterSpacing:'0.12em', textTransform:'uppercase', borderBottom:`1px solid ${C.border}` }}>Switch User</div>
+                <div style={{ padding:'8px 12px 6px', fontSize:13, fontFamily:C.mono, color:C.dim, letterSpacing:'0.12em', textTransform:'uppercase', borderBottom:`1px solid ${C.border}` }}>Switch User</div>
                 {orgUsers.map(u => {
                   const isActive = u.id === activeUserId, pr = primaryRole(u), rc = ROLE_COLORS[pr] || C.amber;
                   return (
@@ -2674,24 +2679,24 @@ export default function App() {
                       if (!isActive) { const prev = activeUser?.name || '?'; setActiveUserId(u.id); setUserMenuOpen(false); setAuditLog(log => [{ id: uid(), ts: new Date().toISOString(), userId: u.id, userName: u.name, userRoles: u.roles||[], userRole: pr, action: 'User switched', details: `Signed in as ${u.name} (was ${prev})` }, ...log].slice(0, 300)); }
                       else setUserMenuOpen(false);
                     }} style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'9px 12px', background: isActive ? `${rc}12` : 'transparent', border:'none', cursor:'pointer', textAlign:'left', borderBottom:`1px solid ${C.border}20` }}>
-                      <div style={{ width:30, height:30, borderRadius:7, background:`${rc}18`, border:`1.5px solid ${isActive?rc:rc+'44'}`, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:C.mono, fontSize:10, fontWeight:700, color:rc, flexShrink:0 }}>{u.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
-                      <div style={{ flex:1, minWidth:0 }}><div style={{ fontSize:12, color: isActive ? C.text : C.mid, fontWeight: isActive ? 500 : 400, fontFamily:C.mono }}>{u.name}{isActive && <span style={{ marginLeft:6, fontSize:9, color:rc, background:`${rc}18`, borderRadius:3, padding:'1px 5px' }}>ACTIVE</span>}</div><div style={{ display:'flex', gap:4, flexWrap:'wrap', marginTop:2 }}>{(u.roles||[]).map((r,i) => <span key={r} style={{ fontSize:9, color:ROLE_COLORS[r]||C.dim, fontFamily:C.mono }}>{i>0?'· ':''}{r}</span>)}</div></div>
+                      <div style={{ width:30, height:30, borderRadius:7, background:`${rc}18`, border:`1.5px solid ${isActive?rc:rc+'44'}`, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:C.mono, fontSize:12, fontWeight:700, color:rc, flexShrink:0 }}>{u.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
+                      <div style={{ flex:1, minWidth:0 }}><div style={{ fontSize:12, color: isActive ? C.text : C.mid, fontWeight: isActive ? 500 : 400, fontFamily:C.mono }}>{u.name}{isActive && <span style={{ marginLeft:6, fontSize:13, color:rc, background:`${rc}18`, borderRadius:3, padding:'1px 5px' }}>ACTIVE</span>}</div><div style={{ display:'flex', gap:4, flexWrap:'wrap', marginTop:2 }}>{(u.roles||[]).map((r,i) => <span key={r} style={{ fontSize:13, color:ROLE_COLORS[r]||C.dim, fontFamily:C.mono }}>{i>0?'· ':''}{r}</span>)}</div></div>
                     </button>
                   );
                 })}
                 <div style={{ padding:'8px 12px', borderTop:`1px solid ${C.border}` }}>
-                  <button onClick={() => { setUserMenuOpen(false); setTab('Org & Roles'); }} style={{ width:'100%', background:'transparent', border:`1px solid ${C.border2}`, color:C.dim, borderRadius:5, padding:'6px 10px', fontSize:10, fontFamily:C.mono, cursor:'pointer' }}>Manage Org & Roles</button>
+                  <button onClick={() => { setUserMenuOpen(false); setTab('Org & Roles'); }} style={{ width:'100%', background:'transparent', border:`1px solid ${C.border2}`, color:C.dim, borderRadius:5, padding:'6px 10px', fontSize:12, fontFamily:C.mono, cursor:'pointer' }}>Manage Org & Roles</button>
                 </div>
               </div>
             )}
           </div>
           <NotificationBell notifications={buildNotifications(aircraft, pilots, batteries, incidents, missions, flights)} onSelectTab={setTab}/>
-          <div style={{ display:'flex', alignItems:'center', gap:6 }}><div style={{ width:6, height:6, borderRadius:'50%', background:C.green, boxShadow:`0 0 5px ${C.green}` }}/><span style={{ fontSize:10, color:C.dim, fontFamily:C.mono }}>ONLINE</span></div>
-          <span style={{ fontSize:10, color:C.dim, fontFamily:C.mono }}>{TODAY} · {timeStr}</span>
+          <div style={{ display:'flex', alignItems:'center', gap:6 }}><div style={{ width:6, height:6, borderRadius:'50%', background:C.green, boxShadow:`0 0 5px ${C.green}` }}/><span style={{ fontSize:12, color:C.dim, fontFamily:C.mono }}>ONLINE</span></div>
+          <span style={{ fontSize:12, color:C.dim, fontFamily:C.mono }}>{TODAY} · {timeStr}</span>
         </div>
       </header>
       <nav style={{ borderBottom:`1px solid ${C.border}`, padding:'0 20px', display:'flex', background:C.bg, position:'sticky', top:52, zIndex:90, overflowX:'auto' }}>
-        {TABS.map(t => { const col = TAB_COL[t] || C.amber; return (<button key={t} onClick={() => setTab(t)} style={{ background:'none', border:'none', padding:'12px 13px', fontSize:10, fontFamily:C.mono, letterSpacing:'0.07em', whiteSpace:'nowrap', color:tab===t?col:C.dim, borderBottom:tab===t?`2px solid ${col}`:'2px solid transparent', marginBottom:-1, textTransform:'uppercase' }}>{t}</button>); })}
+        {TABS.map(t => { const col = TAB_COL[t] || C.amber; return (<button key={t} onClick={() => setTab(t)} style={{ background:'none', border:'none', padding:'12px 13px', fontSize:12, fontFamily:C.mono, letterSpacing:'0.07em', whiteSpace:'nowrap', color:tab===t?col:C.dim, borderBottom:tab===t?`2px solid ${col}`:'2px solid transparent', marginBottom:-1, textTransform:'uppercase' }}>{t}</button>); })}
       </nav>
       <main style={{ padding:'24px', maxWidth:1200, margin:'0 auto' }}>
         {tab==='Dashboard' && <ErrorBoundary tab="Dashboard"><Dashboard flights={flights} missions={missions} aircraft={aircraft} pilots={pilots} batteries={batteries} incidents={incidents} setTab={setTab}/></ErrorBoundary>}
