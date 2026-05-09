@@ -179,10 +179,26 @@ const geocode = async (loc) => {
 };
 const fetchWeather = async (lat, lon) => {
   try {
-    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,wind_gusts_10m,cloud_cover,visibility,precipitation,weather_code,relative_humidity_2m&wind_speed_unit=mph&temperature_unit=fahrenheit&timezone=auto`);
+    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,cloud_cover,visibility,precipitation,weather_code,relative_humidity_2m&hourly=temperature_2m,wind_speed_10m,wind_gusts_10m,weather_code,precipitation_probability&wind_speed_unit=mph&temperature_unit=fahrenheit&timezone=auto&forecast_hours=24`);
     const d = await r.json();
-    return d.current || null;
+    return { current: d.current || null, hourly: d.hourly || null };
   } catch(e) { return null; }
+};
+const WIND_DIR = d => { const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW']; return dirs[Math.round((d%360)/22.5)%16]; };
+const useLeaflet = () => {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    if (window.L) { setReady(true); return; }
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(css);
+    const js = document.createElement('script');
+    js.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    js.onload = () => setReady(true);
+    document.head.appendChild(js);
+  }, []);
+  return ready;
 };
 const callAI = async (messages, sys, maxTokens = 1200) => {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
@@ -509,7 +525,7 @@ function PermDenied({ action }) {
 }
 
 function WeatherPanel({ location, lat, lon }) {
-  const [wx, setWx] = useState(null);
+  const [wxData, setWxData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
   const prevKey = useRef('');
@@ -517,19 +533,20 @@ function WeatherPanel({ location, lat, lon }) {
     const key = lat ? `${lat},${lon}` : location;
     if (!key || key === prevKey.current) return;
     prevKey.current = key;
-    setLoading(true); setErr(null); setWx(null);
+    setLoading(true); setErr(null); setWxData(null);
     (async () => {
       let lt = lat, ln = lon;
       if (!lt && location) { const g = await geocode(location); if (!g) { setErr('Location not found'); setLoading(false); return; } lt = g.lat; ln = g.lon; }
-      const w = await fetchWeather(lt, ln);
-      if (!w) { setErr('Weather unavailable'); setLoading(false); return; }
-      setWx(w); setLoading(false);
+      const data = await fetchWeather(lt, ln);
+      if (!data?.current) { setErr('Weather unavailable'); setLoading(false); return; }
+      setWxData(data); setLoading(false);
     })();
   }, [location, lat, lon]);
   if (!location && !lat) return null;
   if (loading) return <div style={{ padding:'12px 16px', borderTop:`1px solid ${C.border}`, fontSize:11, color:C.dim, fontFamily:C.mono }}>Fetching weather…</div>;
   if (err) return <div style={{ padding:'12px 16px', borderTop:`1px solid ${C.border}`, fontSize:11, color:C.red, fontFamily:C.mono }}>{err}</div>;
-  if (!wx) return null;
+  if (!wxData?.current) return null;
+  const wx = wxData.current;
   const verdict = wxGoNogo(wx);
   const gc = verdict?.go ? C.green : C.red;
   return (
@@ -539,14 +556,15 @@ function WeatherPanel({ location, lat, lon }) {
         <span style={{ fontSize:10, fontFamily:C.mono, color:gc, background:gc+'18', border:`1px solid ${gc}44`, borderRadius:4, padding:'2px 8px', fontWeight:700 }}>{verdict?.go ? 'GO' : 'NO-GO'}</span>
       </div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(80px,1fr))', gap:8, marginBottom:10 }}>
-        {[['Conditions', WX_CODE[wx.weather_code] || `Code ${wx.weather_code}`],['Wind', `${wx.wind_speed_10m?.toFixed(0)} mph`],['Gusts', `${wx.wind_gusts_10m?.toFixed(0)} mph`],['Visibility', `${(wx.visibility/1609.34).toFixed(1)} SM`],['Cloud', `${wx.cloud_cover}%`],['Temp', `${wx.temperature_2m?.toFixed(0)}°F`]].map(([l, v]) => (
+        {[['Conditions', WX_CODE[wx.weather_code] || `Code ${wx.weather_code}`],['Wind', `${wx.wind_speed_10m?.toFixed(0)} mph ${wx.wind_direction_10m != null ? WIND_DIR(wx.wind_direction_10m) : ''}`],['Gusts', `${wx.wind_gusts_10m?.toFixed(0)} mph`],['Visibility', `${(wx.visibility/1609.34).toFixed(1)} SM`],['Cloud', `${wx.cloud_cover}%`],['Temp', `${wx.temperature_2m?.toFixed(0)}°F`],['Humidity', `${wx.relative_humidity_2m}%`]].map(([l, v]) => (
           <div key={l} style={{ background:C.card, borderRadius:5, padding:'7px 9px', border:`1px solid ${C.border}` }}>
             <div style={{ fontSize:9, fontFamily:C.mono, color:C.dim, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:2 }}>{l}</div>
             <div style={{ fontSize:11, fontFamily:C.mono, color:C.text, fontWeight:700 }}>{v}</div>
           </div>
         ))}
       </div>
-      <div style={{ fontSize:11, color: verdict?.go ? (verdict?.marginal ? C.amber : C.green) : C.red, fontFamily:C.mono, borderRadius:5, padding:'7px 12px', border:`1px solid ${(verdict?.go ? (verdict?.marginal ? C.amber : C.green) : C.red)}40`, background:`${(verdict?.go ? (verdict?.marginal ? C.amber : C.green) : C.red)}12` }}>{verdict?.reason}</div>
+      <div style={{ fontSize:11, color: verdict?.go ? (verdict?.marginal ? C.amber : C.green) : C.red, fontFamily:C.mono, borderRadius:5, padding:'7px 12px', border:`1px solid ${(verdict?.go ? (verdict?.marginal ? C.amber : C.green) : C.red)}40`, background:`${(verdict?.go ? (verdict?.marginal ? C.amber : C.green) : C.red)}12`, marginBottom:0 }}>{verdict?.reason}</div>
+      <WeatherForecast hourly={wxData.hourly}/>
     </div>
   );
 }
@@ -583,6 +601,202 @@ function AirspacePanel({ location, lat, lon, altFt }) {
       })}
       <div style={{ fontSize:10, color:C.dim, marginTop:6, fontFamily:C.mono }}>Advisory only. Always verify via FAA B4UFLY, LAANC, and NOTAMs before flight.</div>
     </div>
+  );
+}
+
+function OpsMap({ missions, onSelectMission, height = 340 }) {
+  const leafletReady = useLeaflet();
+  const mapRef = useRef(null);
+  const mapInstance = useRef(null);
+  const markersRef = useRef([]);
+  useEffect(() => {
+    if (!leafletReady || !mapRef.current) return;
+    if (mapInstance.current) return;
+    const L = window.L;
+    const map = L.map(mapRef.current, { zoomControl: true, attributionControl: false }).setView([44.05, -123.09], 10);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+    mapInstance.current = map;
+    return () => { map.remove(); mapInstance.current = null; };
+  }, [leafletReady]);
+  useEffect(() => {
+    if (!mapInstance.current || !window.L) return;
+    const L = window.L, map = mapInstance.current;
+    markersRef.current.forEach(m => map.removeLayer(m));
+    markersRef.current = [];
+    const statusCol = { planned:'#60A5FA', approved:'#10B981', completed:'#475569', cancelled:'#EF4444' };
+    const bounds = [];
+    missions.forEach(m => {
+      if (!m.lat || !m.lon) return;
+      const sc = statusCol[m.status] || '#475569';
+      const icon = L.divIcon({ className:'', html:`<div style="width:14px;height:14px;background:${sc};border:2px solid rgba(255,255,255,0.9);border-radius:50%;box-shadow:0 0 8px ${sc}80"></div>`, iconSize:[14,14], iconAnchor:[7,7] });
+      const marker = L.marker([m.lat, m.lon], { icon }).addTo(map);
+      marker.bindPopup(`<div style="font-family:monospace;font-size:11px;min-width:150px;line-height:1.6"><strong style="font-size:12px">${m.name}</strong><br/>${m.location}<br/>${m.date} · <span style="color:${sc};font-weight:700">${m.status.toUpperCase()}</span><br/>${m.altFt||400}ft AGL · ${m.objective||''}</div>`, { className:'dark-popup' });
+      if (onSelectMission) marker.on('click', () => onSelectMission(m.id));
+      markersRef.current.push(marker);
+      bounds.push([m.lat, m.lon]);
+    });
+    AIRPORTS.forEach(ap => {
+      const icon = L.divIcon({ className:'', html:`<div style="width:8px;height:8px;background:${C.purple}99;border:1.5px solid ${C.purple};border-radius:2px;"></div>`, iconSize:[8,8], iconAnchor:[4,4] });
+      const marker = L.marker([ap.lat, ap.lon], { icon, interactive:true }).addTo(map);
+      marker.bindTooltip(`${ap.id} · Class ${ap.cls}`, { permanent:false, direction:'top', className:'', offset:[0,-6] });
+      markersRef.current.push(marker);
+    });
+    if (bounds.length > 1) map.fitBounds(bounds, { padding:[30,30] });
+    else if (bounds.length === 1) map.setView(bounds[0], 12);
+  }, [missions, leafletReady]);
+  if (!leafletReady) return <div style={{ height, background:C.card, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:C.mono, fontSize:11, color:C.dim, border:`1px solid ${C.border}` }}>Loading map…</div>;
+  return <div ref={mapRef} style={{ height, borderRadius:8, overflow:'hidden', border:`1px solid ${C.border}` }}/>;
+}
+
+function MissionMapView({ mission, height = 280 }) {
+  const leafletReady = useLeaflet();
+  const mapRef = useRef(null);
+  const mapInstance = useRef(null);
+  useEffect(() => {
+    if (!leafletReady || !mapRef.current || !mission?.lat) return;
+    if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; }
+    const L = window.L;
+    const map = L.map(mapRef.current, { zoomControl:true, attributionControl:false }).setView([mission.lat, mission.lon], 14);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom:19 }).addTo(map);
+    const sc = { planned:'#60A5FA', approved:'#10B981', completed:'#475569', cancelled:'#EF4444' }[mission.status] || '#F59E0B';
+    const icon = L.divIcon({ className:'', html:`<div style="width:16px;height:16px;background:${sc};border:3px solid #fff;border-radius:50%;box-shadow:0 0 10px ${sc}"></div>`, iconSize:[16,16], iconAnchor:[8,8] });
+    L.marker([mission.lat, mission.lon], { icon }).addTo(map);
+    L.circle([mission.lat, mission.lon], { radius:(mission.altFt||400)*0.3048, color:sc, fillColor:sc, fillOpacity:0.08, weight:1.5, dashArray:'6 4' }).addTo(map);
+    AIRPORTS.forEach(ap => {
+      const nm = nmBetween(mission.lat, mission.lon, ap.lat, ap.lon);
+      if (nm <= ap.radiusNm + 5) {
+        L.circle([ap.lat, ap.lon], { radius:ap.radiusNm*1852, color:C.purple, fillColor:C.purple, fillOpacity:0.04, weight:1, dashArray:'4 4' }).addTo(map);
+        const apIcon = L.divIcon({ className:'', html:`<div style="font-family:monospace;font-size:9px;color:${C.purple};background:${C.card}cc;padding:1px 4px;border-radius:2px;border:1px solid ${C.purple}60;white-space:nowrap">${ap.id} · ${ap.cls}</div>`, iconSize:'auto', iconAnchor:[0,0] });
+        L.marker([ap.lat, ap.lon], { icon:apIcon }).addTo(map);
+      }
+    });
+    mapInstance.current = map;
+    return () => { map.remove(); mapInstance.current = null; };
+  }, [leafletReady, mission?.lat, mission?.lon, mission?.status]);
+  if (!mission?.lat) return <Card style={{ padding:'16px', textAlign:'center' }}><span style={{ fontSize:11, color:C.dim, fontFamily:C.mono }}>No coordinates set — edit mission to add location</span></Card>;
+  if (!leafletReady) return <div style={{ height, background:C.card, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:C.mono, fontSize:11, color:C.dim }}>Loading map…</div>;
+  return <div ref={mapRef} style={{ height, borderRadius:8, overflow:'hidden', border:`1px solid ${C.border}`, marginBottom:12 }}/>;
+}
+
+function MapPicker({ lat, lon, onChange }) {
+  const leafletReady = useLeaflet();
+  const mapRef = useRef(null);
+  const mapInstance = useRef(null);
+  const markerRef = useRef(null);
+  useEffect(() => {
+    if (!leafletReady || !mapRef.current) return;
+    if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; }
+    const L = window.L;
+    const center = lat && lon ? [lat, lon] : [44.05, -123.09];
+    const zoom = lat && lon ? 14 : 10;
+    const map = L.map(mapRef.current, { zoomControl:true, attributionControl:false }).setView(center, zoom);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom:19 }).addTo(map);
+    if (lat && lon) {
+      const icon = L.divIcon({ className:'', html:`<div style="width:14px;height:14px;background:${C.amber};border:2px solid #fff;border-radius:50%;box-shadow:0 0 8px ${C.amber}"></div>`, iconSize:[14,14], iconAnchor:[7,7] });
+      markerRef.current = L.marker([lat, lon], { icon, draggable:true }).addTo(map);
+      markerRef.current.on('dragend', e => { const p = e.target.getLatLng(); onChange(+p.lat.toFixed(6), +p.lng.toFixed(6)); });
+    }
+    map.on('click', e => {
+      const p = e.latlng;
+      onChange(+p.lat.toFixed(6), +p.lng.toFixed(6));
+    });
+    mapInstance.current = map;
+    return () => { map.remove(); mapInstance.current = null; };
+  }, [leafletReady]);
+  useEffect(() => {
+    if (!mapInstance.current || !window.L) return;
+    const L = window.L, map = mapInstance.current;
+    if (markerRef.current) map.removeLayer(markerRef.current);
+    if (lat && lon) {
+      const icon = L.divIcon({ className:'', html:`<div style="width:14px;height:14px;background:${C.amber};border:2px solid #fff;border-radius:50%;box-shadow:0 0 8px ${C.amber}"></div>`, iconSize:[14,14], iconAnchor:[7,7] });
+      markerRef.current = L.marker([lat, lon], { icon, draggable:true }).addTo(map);
+      markerRef.current.on('dragend', e => { const p = e.target.getLatLng(); onChange(+p.lat.toFixed(6), +p.lng.toFixed(6)); });
+    }
+  }, [lat, lon]);
+  if (!leafletReady) return <div style={{ height:200, background:C.card, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:C.mono, fontSize:11, color:C.dim }}>Loading map…</div>;
+  return (
+    <div>
+      <div ref={mapRef} style={{ height:200, borderRadius:8, overflow:'hidden', border:`1px solid ${C.border}` }}/>
+      <div style={{ fontSize:10, color:C.dim, fontFamily:C.mono, marginTop:4 }}>Click map to set coordinates · drag marker to adjust</div>
+    </div>
+  );
+}
+
+function WeatherForecast({ hourly }) {
+  if (!hourly?.time) return null;
+  const now = new Date();
+  const hours = hourly.time.map((t,i) => ({
+    time: new Date(t),
+    temp: hourly.temperature_2m?.[i],
+    wind: hourly.wind_speed_10m?.[i],
+    gust: hourly.wind_gusts_10m?.[i],
+    code: hourly.weather_code?.[i],
+    precip: hourly.precipitation_probability?.[i],
+  })).filter(h => h.time >= now).slice(0,12);
+  if (!hours.length) return null;
+  return (
+    <div style={{ borderTop:`1px solid ${C.border}`, padding:'12px 16px' }}>
+      <div style={{ fontSize:10, fontFamily:C.mono, color:C.blue, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:10 }}>12-Hour Forecast</div>
+      <div style={{ display:'flex', gap:4, overflowX:'auto', paddingBottom:4 }}>
+        {hours.map((h, i) => {
+          const hr = h.time.getHours();
+          const timeLabel = hr === 0 ? '12a' : hr < 12 ? `${hr}a` : hr === 12 ? '12p' : `${hr-12}p`;
+          const windCol = h.wind > 25 ? C.red : h.wind > 18 ? C.amber : C.green;
+          return (
+            <div key={i} style={{ minWidth:58, padding:'6px 5px', background:C.card, border:`1px solid ${C.border}`, borderRadius:5, textAlign:'center', flexShrink:0 }}>
+              <div style={{ fontSize:10, fontFamily:C.mono, color:C.mid, marginBottom:4 }}>{timeLabel}</div>
+              <div style={{ fontSize:11, fontFamily:C.mono, color:C.text, fontWeight:700, marginBottom:2 }}>{h.temp?.toFixed(0)}°</div>
+              <div style={{ fontSize:9, color:C.dim, marginBottom:2 }}>{WX_CODE[h.code]?.split(' ').slice(0,2).join(' ') || '?'}</div>
+              <div style={{ fontSize:9, fontFamily:C.mono, color:windCol }}>{h.wind?.toFixed(0)}mph</div>
+              {h.precip > 0 && <div style={{ fontSize:9, color:C.blue, marginTop:1 }}>{h.precip}%</div>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function DashboardWeather() {
+  const [wx, setWx] = useState(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    (async () => {
+      const data = await fetchWeather(44.0521, -123.0868);
+      setWx(data);
+      setLoading(false);
+    })();
+  }, []);
+  if (loading) return <Card style={{ padding:'16px', minHeight:120 }}><div style={{ fontSize:11, color:C.dim, fontFamily:C.mono }}>Fetching weather…</div></Card>;
+  if (!wx?.current) return null;
+  const w = wx.current;
+  const verdict = wxGoNogo(w);
+  const gc = verdict?.go ? C.green : C.red;
+  return (
+    <Card style={{ padding:0, overflow:'hidden' }}>
+      <div style={{ padding:'11px 16px', borderBottom:`1px solid ${C.border}`, display:'flex', justifyContent:'space-between', alignItems:'center', background:`${C.teal}08` }}>
+        <span style={{ fontSize:10, fontFamily:C.mono, color:C.teal, letterSpacing:'0.12em', textTransform:'uppercase' }}>Eugene, OR — Current Weather</span>
+        <span style={{ fontSize:10, fontFamily:C.mono, color:gc, background:gc+'18', border:`1px solid ${gc}44`, borderRadius:4, padding:'2px 8px', fontWeight:700 }}>{verdict?.go ? (verdict?.marginal ? 'MARGINAL' : 'GO') : 'NO-GO'}</span>
+      </div>
+      <div style={{ padding:'14px 16px' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:12 }}>
+          <div>
+            <div style={{ fontSize:32, fontWeight:700, fontFamily:C.mono, color:C.text, lineHeight:1 }}>{w.temperature_2m?.toFixed(0)}°F</div>
+            <div style={{ fontSize:11, color:C.mid, marginTop:4 }}>{WX_CODE[w.weather_code] || `Code ${w.weather_code}`}</div>
+          </div>
+          <div style={{ flex:1, display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
+            {[['Wind', `${w.wind_speed_10m?.toFixed(0)} mph ${w.wind_direction_10m != null ? WIND_DIR(w.wind_direction_10m) : ''}`], ['Gusts', `${w.wind_gusts_10m?.toFixed(0)} mph`], ['Visibility', `${(w.visibility/1609.34).toFixed(1)} SM`], ['Humidity', `${w.relative_humidity_2m}%`], ['Cloud', `${w.cloud_cover}%`], ['Precip', `${w.precipitation?.toFixed(1)} in`]].map(([l, v]) => (
+              <div key={l}>
+                <div style={{ fontSize:9, fontFamily:C.mono, color:C.dim, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:1 }}>{l}</div>
+                <div style={{ fontSize:11, fontFamily:C.mono, color:C.text }}>{v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ fontSize:11, color:verdict?.go ? (verdict?.marginal ? C.amber : C.green) : C.red, fontFamily:C.mono, borderRadius:5, padding:'7px 12px', border:`1px solid ${(verdict?.go ? (verdict?.marginal ? C.amber : C.green) : C.red)}40`, background:`${(verdict?.go ? (verdict?.marginal ? C.amber : C.green) : C.red)}12` }}>{verdict?.reason}</div>
+      </div>
+      <WeatherForecast hourly={wx.hourly}/>
+    </Card>
   );
 }
 
@@ -648,12 +862,26 @@ function Dashboard({ flights, missions, aircraft, pilots, batteries, incidents, 
         </div>
       )}
       {badBat > 0 && (
-        <div style={{ background:`${C.amber}10`, border:`1px solid ${C.amber}40`, borderRadius:8, padding:'11px 16px', display:'flex', alignItems:'center', gap:10 }}>
+        <div style={{ background:`${C.amber}10`, border:`1px solid ${C.amber}40`, borderRadius:8, padding:'11px 16px', display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
           <span style={{ color:C.amber }}>!</span>
           <div><div style={{ fontSize:12, color:C.amber, fontFamily:C.mono, fontWeight:700 }}>Battery health warning</div><div style={{ fontSize:11, color:C.mid, marginTop:2 }}>{badBat} battery/batteries degraded or retired</div></div>
           <button onClick={() => setTab('Assets')} style={{ marginLeft:'auto', background:'none', border:`1px solid ${C.amber}`, color:C.amber, borderRadius:4, padding:'4px 10px', fontSize:10, fontFamily:C.mono, cursor:'pointer' }}>Review →</button>
         </div>
       )}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+        <div>
+          <div style={{ fontSize:10, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:8 }}>Operations Map</div>
+          <OpsMap missions={missions} onSelectMission={id => { setTab('Missions'); }} height={380}/>
+          <div style={{ display:'flex', gap:12, marginTop:8, flexWrap:'wrap' }}>
+            {[['Planned','#60A5FA'],['Approved','#10B981'],['Completed','#475569'],['Airport',C.purple]].map(([l,c]) => (
+              <div key={l} style={{ display:'flex', alignItems:'center', gap:5, fontSize:10, fontFamily:C.mono, color:C.dim }}>
+                <div style={{ width:8, height:8, borderRadius:l==='Airport'?2:'50%', background:c }}/>{l}
+              </div>
+            ))}
+          </div>
+        </div>
+        <DashboardWeather/>
+      </div>
     </div>
   );
 }
@@ -844,7 +1072,9 @@ function MissionForm({ form, setForm, aircraft, pilots, orgUsers, isEdit }) {
         <Field label="Longitude"><input type="number" step="0.000001" value={form.lon ?? ''} onChange={e => setForm(f => ({ ...f, lon: e.target.value !== '' ? parseFloat(e.target.value) : null }))} placeholder="-123.086800" style={{ width:'100%', fontFamily:'monospace' }}/></Field>
         <Field label="Coord Source"><div style={{ fontSize:11, color:C.dim, fontFamily:C.mono, paddingTop:6, lineHeight:1.6 }}>{form.lat && form.lon ? <span style={{ color:C.teal }}>Manual / pin</span> : <span>Auto-geocode on save</span>}</div></Field>
       </div>
-      <div style={{ fontSize:10, color:C.dim, fontFamily:C.mono, marginBottom:8 }}>Leave coords blank to auto-geocode from location name. Use Mission Map to drop a pin.</div>
+      <div style={{ marginTop:4, marginBottom:8 }}>
+        <MapPicker lat={form.lat} lon={form.lon} onChange={(lat, lon) => setForm(f => ({ ...f, lat, lon }))}/>
+      </div>
     </div>
   );
 }
@@ -977,6 +1207,8 @@ function MissionWorkspace({ mission, missions, setMissions, flights, setFlights,
               {(()=>{ const rl=getRiskLevel(mission.riskScore); return <span style={{ fontFamily:C.mono, fontSize:13, color:rl.color, fontWeight:700 }}>{mission.riskScore} — {rl.label}</span>; })()}
             </Card>
           )}
+          <div style={{ fontSize:10, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:8 }}>Mission Location</div>
+          <MissionMapView mission={mission}/>
           <WeatherPanel location={mission.location} lat={mission.lat} lon={mission.lon}/>
           <AirspacePanel location={mission.location} lat={mission.lat} lon={mission.lon} altFt={mission.altFt}/>
         </div>
@@ -1846,6 +2078,12 @@ export default function App() {
         button { cursor:pointer; font-family:inherit; transition:opacity 0.15s; }
         button:hover { opacity:0.85; }
         @keyframes pulse { 0%,100% { opacity:0.3 } 50% { opacity:1 } }
+        .leaflet-container { background: #0F1520 !important; font-family: inherit !important; }
+        .leaflet-control-zoom a { background: #141B28 !important; color: #94A3B8 !important; border-color: #1C2438 !important; }
+        .leaflet-control-zoom a:hover { background: #1C2438 !important; color: #E2E8F0 !important; }
+        .leaflet-popup-content-wrapper { background: #141B28 !important; color: #E2E8F0 !important; border: 1px solid #263147 !important; border-radius: 8px !important; box-shadow: 0 4px 16px rgba(0,0,0,0.5) !important; }
+        .leaflet-popup-tip { background: #141B28 !important; border: 1px solid #263147 !important; }
+        .leaflet-tooltip { background: #141B28 !important; color: #94A3B8 !important; border: 1px solid #263147 !important; font-family: 'Space Mono', monospace !important; font-size: 10px !important; }
       `}</style>
       <header style={{ borderBottom:`1px solid ${C.border}`, padding:'0 24px', height:52, display:'flex', alignItems:'center', justifyContent:'space-between', background:C.bg, position:'sticky', top:0, zIndex:100 }}>
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
