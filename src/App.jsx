@@ -185,6 +185,80 @@ const fetchWeather = async (lat, lon) => {
   } catch(e) { return null; }
 };
 const WIND_DIR = d => { const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW']; return dirs[Math.round((d%360)/22.5)%16]; };
+
+const fetchSunTimes = async (lat, lon, date) => {
+  try {
+    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=sunrise,sunset&start_date=${date}&end_date=${date}&timezone=auto`);
+    const d = await r.json();
+    if (!d?.daily?.sunrise?.[0]) return null;
+    const sunrise = new Date(d.daily.sunrise[0]);
+    const sunset = new Date(d.daily.sunset[0]);
+    const civilDawn = new Date(sunrise.getTime() - 30*60000);
+    const civilDusk = new Date(sunset.getTime() + 30*60000);
+    return { sunrise, sunset, civilDawn, civilDusk };
+  } catch (e) { return null; }
+};
+
+const calcDensityAlt = (elevFt, tempF, pressureInHg = 29.92) => {
+  const tempC = (tempF - 32) * 5/9;
+  const pressureAlt = elevFt + (29.92 - pressureInHg) * 1000;
+  const isaTemp = 15 - (elevFt / 1000) * 1.98;
+  return Math.round(pressureAlt + 120 * (tempC - isaTemp));
+};
+
+const checkScheduleConflicts = (mission, allMissions, allFlights) => {
+  if (!mission.aircraftId || !mission.date) return [];
+  const conflicts = [];
+  allMissions.forEach(m => {
+    if (m.id === mission.id) return;
+    if (m.aircraftId === mission.aircraftId && m.date === mission.date && m.status !== 'cancelled') {
+      conflicts.push({ type: 'aircraft', msg: `Aircraft also scheduled: "${m.name}" at ${m.time}`, severity: 'high' });
+    }
+    if (m.pilotId === mission.pilotId && m.date === mission.date && m.status !== 'cancelled' && m.pilotId) {
+      conflicts.push({ type: 'pilot', msg: `Pilot also scheduled: "${m.name}" at ${m.time}`, severity: 'medium' });
+    }
+  });
+  return conflicts;
+};
+
+const buildNotifications = (aircraft, pilots, batteries, incidents, missions, flights) => {
+  const today = new Date(TODAY);
+  const notes = [];
+  pilots.forEach(p => {
+    if (!p.certExpiry) return;
+    const days = Math.round((new Date(p.certExpiry) - today) / 86400000);
+    if (days < 0) notes.push({ id: `p-${p.id}-exp`, sev: 'critical', cat: 'Pilot', icon: 'P', msg: `${p.name} certificate EXPIRED ${Math.abs(days)}d ago`, tab: 'Assets' });
+    else if (days < 30) notes.push({ id: `p-${p.id}-soon`, sev: 'high', cat: 'Pilot', icon: 'P', msg: `${p.name} cert expires in ${days}d`, tab: 'Assets' });
+    else if (days < 90) notes.push({ id: `p-${p.id}-warn`, sev: 'medium', cat: 'Pilot', icon: 'P', msg: `${p.name} cert expires in ${days}d`, tab: 'Assets' });
+  });
+  aircraft.forEach(a => {
+    if (!a.nextMaint) return;
+    const days = Math.round((new Date(a.nextMaint) - today) / 86400000);
+    if (days < 0) notes.push({ id: `a-${a.id}-od`, sev: 'critical', cat: 'Maintenance', icon: 'M', msg: `${a.tail} maintenance OVERDUE ${Math.abs(days)}d`, tab: 'Assets' });
+    else if (days < 14) notes.push({ id: `a-${a.id}-soon`, sev: 'high', cat: 'Maintenance', icon: 'M', msg: `${a.tail} maintenance due in ${days}d`, tab: 'Assets' });
+    else if (days < 30) notes.push({ id: `a-${a.id}-up`, sev: 'medium', cat: 'Maintenance', icon: 'M', msg: `${a.tail} maintenance due in ${days}d`, tab: 'Assets' });
+  });
+  batteries.forEach(b => {
+    const cycPct = Math.round((b.totalCycles / b.maxCycles) * 100);
+    if (b.status === 'retired') return;
+    if (cycPct >= 95) notes.push({ id: `b-${b.id}-eol`, sev: 'critical', cat: 'Battery', icon: 'B', msg: `${b.label} at ${cycPct}% cycle life — retire soon`, tab: 'Assets' });
+    else if (b.capacityPct < 75) notes.push({ id: `b-${b.id}-cap`, sev: 'high', cat: 'Battery', icon: 'B', msg: `${b.label} capacity at ${b.capacityPct}%`, tab: 'Assets' });
+    else if (b.status === 'degraded') notes.push({ id: `b-${b.id}-deg`, sev: 'medium', cat: 'Battery', icon: 'B', msg: `${b.label} flagged degraded`, tab: 'Assets' });
+  });
+  incidents.forEach(i => {
+    if (i.status === 'draft') notes.push({ id: `i-${i.id}`, sev: 'high', cat: 'Incident', icon: 'I', msg: `${i.type} incident from ${i.date} in draft`, tab: 'Incidents' });
+  });
+  missions.forEach(m => {
+    if (m.status !== 'planned' && m.status !== 'approved') return;
+    const conflicts = checkScheduleConflicts(m, missions, flights);
+    if (conflicts.length) notes.push({ id: `m-${m.id}-conf`, sev: 'high', cat: 'Conflict', icon: 'C', msg: `"${m.name}" — ${conflicts[0].msg}`, tab: 'Missions' });
+    if (m.status === 'planned' && new Date(m.date) >= today && m.riskScore === null) {
+      const days = Math.round((new Date(m.date) - today) / 86400000);
+      if (days <= 3) notes.push({ id: `m-${m.id}-risk`, sev: 'medium', cat: 'Mission', icon: 'M', msg: `"${m.name}" needs risk assessment (${days}d away)`, tab: 'Missions' });
+    }
+  });
+  return notes.sort((a,b) => { const order = { critical:0, high:1, medium:2, low:3 }; return (order[a.sev]||9) - (order[b.sev]||9); });
+};
 const useLeaflet = () => {
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -757,6 +831,169 @@ function WeatherForecast({ hourly }) {
   );
 }
 
+function NotificationBell({ notifications, onSelectTab }) {
+  const [open, setOpen] = useState(false);
+  const sevCol = { critical: C.red, high: C.orange, medium: C.amber, low: C.dim };
+  const sevBg = { critical: `${C.red}15`, high: `${C.orange}10`, medium: `${C.amber}10`, low: 'transparent' };
+  const critical = notifications.filter(n => n.sev === 'critical').length;
+  const high = notifications.filter(n => n.sev === 'high').length;
+  const dotColor = critical > 0 ? C.red : high > 0 ? C.orange : notifications.length > 0 ? C.amber : null;
+  useEffect(() => {
+    if (!open) return;
+    const handle = (e) => { if (!e.target.closest('[data-notif-bell]')) setOpen(false); };
+    const t = setTimeout(() => window.addEventListener('click', handle), 0);
+    return () => { clearTimeout(t); window.removeEventListener('click', handle); };
+  }, [open]);
+  return (
+    <div data-notif-bell style={{ position: 'relative' }}>
+      <button onClick={(e) => { e.stopPropagation(); setOpen(o => !o); }} style={{ background: 'transparent', border: `1px solid ${C.border}`, borderRadius: 6, padding: '5px 9px', cursor: 'pointer', position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M8 1.5C5.5 1.5 3.5 3.5 3.5 6V8.5L2 11H14L12.5 8.5V6C12.5 3.5 10.5 1.5 8 1.5Z" stroke={C.mid} strokeWidth="1.3" strokeLinejoin="round"/>
+          <path d="M6.5 13C6.5 13.8 7.2 14.5 8 14.5C8.8 14.5 9.5 13.8 9.5 13" stroke={C.mid} strokeWidth="1.3" strokeLinecap="round"/>
+        </svg>
+        {dotColor && <span style={{ position: 'absolute', top: 2, right: 2, width: 8, height: 8, borderRadius: '50%', background: dotColor, boxShadow: `0 0 6px ${dotColor}`, border: `1.5px solid ${C.bg}` }}/>}
+        {notifications.length > 0 && (
+          <span style={{ marginLeft: 5, fontSize: 10, fontFamily: C.mono, color: dotColor || C.dim, fontWeight: 700 }}>{notifications.length}</span>
+        )}
+      </button>
+      {open && (
+        <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: C.card2, border: `1px solid ${C.border2}`, borderRadius: 8, minWidth: 320, maxWidth: 380, maxHeight: 480, overflowY: 'auto', zIndex: 500, boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }}>
+          <div style={{ padding: '10px 14px', borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, background: C.card2 }}>
+            <span style={{ fontSize: 10, fontFamily: C.mono, color: C.amber, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Notifications</span>
+            <span style={{ fontSize: 9, fontFamily: C.mono, color: C.dim }}>{notifications.length} active</span>
+          </div>
+          {notifications.length === 0 ? (
+            <div style={{ padding: 32, textAlign: 'center', fontSize: 11, fontFamily: C.mono, color: C.green }}>All clear — no active alerts</div>
+          ) : (
+            <div>
+              {notifications.map(n => (
+                <button key={n.id} onClick={() => { setOpen(false); onSelectTab(n.tab); }} style={{ width: '100%', display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 14px', background: sevBg[n.sev], border: 'none', borderBottom: `1px solid ${C.border}30`, cursor: 'pointer', textAlign: 'left' }}>
+                  <div style={{ width: 22, height: 22, borderRadius: 5, background: `${sevCol[n.sev]}20`, border: `1px solid ${sevCol[n.sev]}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: C.mono, fontSize: 10, fontWeight: 700, color: sevCol[n.sev], flexShrink: 0 }}>{n.icon}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 9, fontFamily: C.mono, color: sevCol[n.sev], textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 2, fontWeight: 700 }}>{n.cat} · {n.sev}</div>
+                    <div style={{ fontSize: 11, color: C.text, lineHeight: 1.5 }}>{n.msg}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CalendarView({ missions, aircraft, pilots, onOpenMission }) {
+  const [cursor, setCursor] = useState(() => { const d = new Date(); d.setDate(1); return d; });
+  const monthName = cursor.toLocaleString('default', { month: 'long', year: 'numeric' });
+  const firstDay = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+  const startDow = firstDay.getDay();
+  const daysInMonth = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
+  const weeks = [];
+  let week = Array(startDow).fill(null);
+  for (let d = 1; d <= daysInMonth; d++) {
+    week.push(d);
+    if (week.length === 7) { weeks.push(week); week = []; }
+  }
+  if (week.length) { while (week.length < 7) week.push(null); weeks.push(week); }
+  const dayMissions = (d) => {
+    if (!d) return [];
+    const ds = `${cursor.getFullYear()}-${String(cursor.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    return missions.filter(m => m.date === ds);
+  };
+  const isToday = (d) => { if (!d) return false; const now = new Date(); return now.getFullYear() === cursor.getFullYear() && now.getMonth() === cursor.getMonth() && now.getDate() === d; };
+  const aTail = id => aircraft.find(a => a.id === id)?.tail || '?';
+  const pName = id => pilots.find(p => p.id === id)?.name?.split(' ')[0] || '?';
+  const sc = { planned: C.blue, approved: C.green, completed: C.dim, cancelled: C.red };
+  const prevMonth = () => { const d = new Date(cursor); d.setMonth(d.getMonth() - 1); setCursor(d); };
+  const nextMonth = () => { const d = new Date(cursor); d.setMonth(d.getMonth() + 1); setCursor(d); };
+  const today = () => { const d = new Date(); d.setDate(1); setCursor(d); };
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+        <Btn onClick={prevMonth}>← Prev</Btn>
+        <span style={{ fontFamily: C.mono, fontSize: 14, color: C.text, fontWeight: 700, minWidth: 180, textAlign: 'center' }}>{monthName}</span>
+        <Btn onClick={nextMonth}>Next →</Btn>
+        <Btn variant='amber' onClick={today}>Today</Btn>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          {[['Planned', C.blue], ['Approved', C.green], ['Completed', C.dim], ['Cancelled', C.red]].map(([l, c]) => (
+            <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontFamily: C.mono, color: C.dim }}>
+              <div style={{ width: 8, height: 8, borderRadius: 2, background: c }}/>{l}
+            </div>
+          ))}
+        </div>
+      </div>
+      <Card style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: `1px solid ${C.border}`, background: C.card2 }}>
+          {['SUN','MON','TUE','WED','THU','FRI','SAT'].map(d => (
+            <div key={d} style={{ padding: '8px', fontSize: 10, fontFamily: C.mono, color: C.dim, letterSpacing: '0.1em', textAlign: 'center', borderRight: `1px solid ${C.border}` }}>{d}</div>
+          ))}
+        </div>
+        {weeks.map((w, wi) => (
+          <div key={wi} style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: wi < weeks.length - 1 ? `1px solid ${C.border}` : 'none' }}>
+            {w.map((d, di) => {
+              const ms = dayMissions(d);
+              const isT = isToday(d);
+              return (
+                <div key={di} style={{ minHeight: 110, padding: 6, borderRight: di < 6 ? `1px solid ${C.border}` : 'none', background: isT ? `${C.amber}08` : 'transparent', position: 'relative' }}>
+                  {d && (
+                    <>
+                      <div style={{ fontSize: 11, fontFamily: C.mono, color: isT ? C.amber : C.mid, fontWeight: isT ? 700 : 400, marginBottom: 4, display: 'flex', justifyContent: 'space-between' }}>
+                        <span>{d}</span>
+                        {isT && <span style={{ fontSize: 8, color: C.amber, background: `${C.amber}18`, borderRadius: 3, padding: '0 4px', letterSpacing: '0.1em' }}>TODAY</span>}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        {ms.slice(0, 3).map(m => {
+                          const col = sc[m.status] || C.dim;
+                          return (
+                            <button key={m.id} onClick={() => onOpenMission(m.id)} style={{ background: `${col}15`, border: `1px solid ${col}40`, borderLeft: `2px solid ${col}`, borderRadius: 3, padding: '3px 5px', cursor: 'pointer', textAlign: 'left' }} title={`${m.name} — ${m.location}`}>
+                              <div style={{ fontSize: 9, fontFamily: C.mono, color: col, fontWeight: 700 }}>{m.time}</div>
+                              <div style={{ fontSize: 10, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</div>
+                              <div style={{ fontSize: 9, color: C.dim, fontFamily: C.mono, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{aTail(m.aircraftId)} · {pName(m.pilotId)}</div>
+                            </button>
+                          );
+                        })}
+                        {ms.length > 3 && <div style={{ fontSize: 9, color: C.dim, fontFamily: C.mono, padding: '2px 5px' }}>+{ms.length - 3} more</div>}
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </Card>
+    </div>
+  );
+}
+
+function SunTimesPanel({ lat, lon, date }) {
+  const [times, setTimes] = useState(null);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (!lat || !lon || !date) return;
+    setLoading(true);
+    fetchSunTimes(lat, lon, date).then(t => { setTimes(t); setLoading(false); });
+  }, [lat, lon, date]);
+  if (loading) return <div style={{ fontSize: 11, color: C.dim, fontFamily: C.mono, padding: '10px 14px' }}>Loading sun times…</div>;
+  if (!times) return null;
+  const fmt = d => d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+  return (
+    <Card style={{ padding: '12px 14px', marginBottom: 10 }}>
+      <div style={{ fontSize: 10, fontFamily: C.mono, color: C.amber, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>Daylight & Civil Twilight ({date})</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+        {[['Civil Dawn', fmt(times.civilDawn), C.purple], ['Sunrise', fmt(times.sunrise), C.amber], ['Sunset', fmt(times.sunset), C.orange], ['Civil Dusk', fmt(times.civilDusk), C.purple]].map(([l, v, col]) => (
+          <div key={l} style={{ background: C.card2, borderRadius: 5, padding: '7px 9px', border: `1px solid ${col}30` }}>
+            <div style={{ fontSize: 9, fontFamily: C.mono, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 2 }}>{l}</div>
+            <div style={{ fontSize: 12, fontFamily: C.mono, color: col, fontWeight: 700 }}>{v}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ fontSize: 10, color: C.dim, fontFamily: C.mono, marginTop: 8 }}>Part 107 allows ops 30min before sunrise to 30min after sunset (civil twilight) with anti-collision lighting.</div>
+    </Card>
+  );
+}
+
 function DashboardWeather() {
   const [wx, setWx] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -1207,6 +1444,17 @@ function MissionWorkspace({ mission, missions, setMissions, flights, setFlights,
               {(()=>{ const rl=getRiskLevel(mission.riskScore); return <span style={{ fontFamily:C.mono, fontSize:13, color:rl.color, fontWeight:700 }}>{mission.riskScore} — {rl.label}</span>; })()}
             </Card>
           )}
+          {(() => {
+            const conflicts = checkScheduleConflicts(mission, missions, flights);
+            if (!conflicts.length) return null;
+            return (
+              <Card style={{ padding: '11px 14px', marginBottom: 10, background: `${C.red}10`, border: `1px solid ${C.red}40` }}>
+                <div style={{ fontSize: 10, fontFamily: C.mono, color: C.red, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6, fontWeight: 700 }}>⚠ Scheduling Conflicts Detected</div>
+                {conflicts.map((c, i) => (<div key={i} style={{ fontSize: 11, color: C.text, marginBottom: 3 }}>· {c.msg}</div>))}
+              </Card>
+            );
+          })()}
+          {mission.lat && mission.date && <SunTimesPanel lat={mission.lat} lon={mission.lon} date={mission.date}/>}
           <div style={{ fontSize:10, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:8 }}>Mission Location</div>
           <MissionMapView mission={mission}/>
           <WeatherPanel location={mission.location} lat={mission.lat} lon={mission.lon}/>
@@ -1343,12 +1591,19 @@ function MissionWorkspace({ mission, missions, setMissions, flights, setFlights,
   );
 }
 
+function ConflictBadge({ mission, missions, flights }) {
+  const conflicts = checkScheduleConflicts(mission, missions, flights);
+  if (!conflicts.length) return null;
+  return (<span style={{ fontSize: 9, fontFamily: C.mono, color: C.red, background: `${C.red}18`, border: `1px solid ${C.red}44`, borderRadius: 3, padding: '1px 6px', fontWeight: 700, letterSpacing: '0.05em' }} title={conflicts.map(c => c.msg).join('\n')}>⚠ {conflicts.length} CONFLICT{conflicts.length > 1 ? 'S' : ''}</span>);
+}
+
 function Missions({ missions, setMissions, aircraft, setAircraft, pilots, setPilots, orgUsers, flights, setFlights, activeUser, addAudit }) {
   const canCreate = can(activeUser,'createMission'), canEdit = can(activeUser,'editMission'), canDelete = can(activeUser,'deleteMission');
   const canLog = can(activeUser,'logFlight'), canExport = can(activeUser,'exportData');
   const [workMissionId, setWorkMissionId] = useState(null);
   const [modal, setModal] = useState(false), [form, setForm] = useState(M_BLANK), [editId, setEditId] = useState(null), [saving, setSaving] = useState(false);
   const [search, setSearch] = useState(''), [statusFilter, setStatusFilter] = useState('all');
+  const [view, setView] = useState('list');
   const { confirm, confirmEl } = useConfirm();
 
   useEffect(() => { if (workMissionId && !missions.find(m => m.id===workMissionId)) setWorkMissionId(null); }, [missions, workMissionId]);
@@ -1383,14 +1638,20 @@ function Missions({ missions, setMissions, aircraft, setAircraft, pilots, setPil
       )}
       {!workMissionId && (
         <div>
-          <div style={{ display:'flex', alignItems:'center', marginBottom:18, borderBottom:`1px solid ${C.border}` }}>
-            <div style={{ marginLeft:'auto', paddingBottom:6, display:'flex', gap:6 }}>
+          <div style={{ display:'flex', alignItems:'center', marginBottom:18, borderBottom:`1px solid ${C.border}`, gap:8, paddingBottom:6 }}>
+            <div style={{ display:'flex', gap:0, background:C.card, border:`1px solid ${C.border}`, borderRadius:6, overflow:'hidden' }}>
+              {[['list','List'], ['calendar','Calendar']].map(([v, l]) => (
+                <button key={v} onClick={() => setView(v)} style={{ background: view===v ? C.amber : 'transparent', color: view===v ? '#000' : C.mid, border:'none', padding:'6px 14px', fontSize:11, fontFamily:C.mono, fontWeight: view===v ? 700 : 400, cursor:'pointer', letterSpacing:'0.06em' }}>{l}</button>
+              ))}
+            </div>
+            <div style={{ marginLeft:'auto', display:'flex', gap:6 }}>
               {canCreate && <Btn variant='primary' onClick={openNew}>+ New Mission</Btn>}
             </div>
           </div>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(100px,1fr))', gap:10, marginBottom:14 }}>
             {[['Planned',missions.filter(m=>m.status==='planned').length,C.blue],['Approved',missions.filter(m=>m.status==='approved').length,C.green],['Completed',missions.filter(m=>m.status==='completed').length,C.dim],['Cancelled',missions.filter(m=>m.status==='cancelled').length,C.red]].map(([l,v,c])=>(<StatCard key={l} label={l} value={v} accent={c}/>))}
           </div>
+          {view === 'calendar' ? (<CalendarView missions={missions} aircraft={aircraft} pilots={pilots} onOpenMission={id => setWorkMissionId(id)}/>) : (<>
           <div style={{ display:'flex', gap:8, marginBottom:12, flexWrap:'wrap' }}>
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name, location, pilot, aircraft…" style={{ flex:1, minWidth:180, padding:'7px 12px', background:C.card2, border:`1px solid ${C.border2}`, borderRadius:6, color:C.text, fontFamily:C.mono, fontSize:11 }}/>
             <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ padding:'7px 12px', background:C.card2, border:`1px solid ${C.border2}`, borderRadius:6, color:C.text, fontFamily:C.mono, fontSize:11, minWidth:120 }}><option value="all">All statuses</option><option value="planned">Planned</option><option value="approved">Approved</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select>
@@ -1409,6 +1670,7 @@ function Missions({ missions, setMissions, aircraft, setAircraft, pilots, setPil
                         <span style={{ fontFamily:C.mono, fontSize:11, color:C.dim }}>{m.date} {m.time}</span>
                         <span style={{ fontSize:13, fontWeight:500, color:C.text }}>{m.name}</span>
                         <Badge status={m.status}/>
+                        <ConflictBadge mission={m} missions={missions} flights={flights}/>
                       </div>
                       <div style={{ fontSize:11, color:C.dim, display:'flex', gap:12, flexWrap:'wrap', alignItems:'center' }}>
                         <span>{m.location}</span><span>{aTail(m.aircraftId)}</span><span>{pName(m.pilotId)}</span><span>{m.altFt}ft AGL</span>
@@ -1429,6 +1691,7 @@ function Missions({ missions, setMissions, aircraft, setAircraft, pilots, setPil
             {!filtered.length && missions.length === 0 && (<Card style={{ padding:48, textAlign:'center' }}><div style={{ fontFamily:C.mono, fontSize:11, color:C.dim, marginBottom:16 }}>No missions yet — create your first one to get started</div>{canCreate && <Btn variant='primary' onClick={openNew}>+ New Mission</Btn>}</Card>)}
             {!filtered.length && missions.length > 0 && (<Card style={{ padding:32, textAlign:'center' }}><div style={{ fontFamily:C.mono, fontSize:11, color:C.dim, marginBottom:12 }}>No missions match your search</div><Btn onClick={() => { setSearch(''); setStatusFilter('all'); }}>Clear filters</Btn></Card>)}
           </div>
+          </>)}
         </div>
       )}
       {modal && (
@@ -1681,8 +1944,8 @@ function Assets({ aircraft, setAircraft, batteries, setBatteries, equipment, set
   );
 }
 
-function Analytics({ flights, aircraft, pilots, activeUser }) {
-  const refMonthly = useRef(null), refAcUtil = useRef(null), refPilotHrs = useRef(null), refOpType = useRef(null);
+function Analytics({ flights, aircraft, pilots, missions, activeUser }) {
+  const refMonthly = useRef(null), refAcUtil = useRef(null), refPilotHrs = useRef(null), refOpType = useRef(null), refRisk = useRef(null);
   const chartInst = useRef({});
   const [chartReady, setChartReady] = useState(false);
   if (!can(activeUser, 'viewAnalytics')) return <PermDenied action="viewAnalytics"/>;
@@ -1704,8 +1967,16 @@ function Analytics({ flights, aircraft, pilots, activeUser }) {
     if (refAcUtil.current) { destroy('acUtil'); const ah = {}; flights.forEach(f => { const t=aircraft.find(a=>a.id===f.aircraftId)?.tail||'?'; ah[t]=(ah[t]||0)+f.durationMin/60; }); const keys = Object.keys(ah); const cols = ['#F59E0B','#60A5FA','#10B981','#A78BFA','#2DD4BF']; chartInst.current.acUtil = new Ch(refAcUtil.current, { type:'doughnut', data:{ labels:keys, datasets:[{ data:keys.map(k=>+ah[k].toFixed(2)), backgroundColor:keys.map((_,i)=>cols[i%cols.length]+'BB'), borderColor:keys.map((_,i)=>cols[i%cols.length]), borderWidth:2 }] }, options:{ ...base, cutout:'68%', plugins:{ ...base.plugins, legend:{ position:'bottom', labels:{ ...base.plugins.legend.labels } } } } }); }
     if (refPilotHrs.current) { destroy('pilotHrs'); const ph = {}; flights.forEach(f => { const n=pilots.find(p=>p.id===f.pilotId)?.name||'?'; ph[n]=(ph[n]||0)+f.durationMin/60; }); const keys = Object.keys(ph); chartInst.current.pilotHrs = new Ch(refPilotHrs.current, { type:'bar', data:{ labels:keys, datasets:[{ label:'Hours', data:keys.map(k=>+ph[k].toFixed(2)), backgroundColor:['#60A5FA33','#10B98133','#A78BFA33'], borderColor:['#60A5FA','#10B981','#A78BFA'], borderWidth:2, borderRadius:4 }] }, options:{ ...base, indexAxis:'y', scales:{ x:{ grid:GRID, ticks:{ ...TICK, callback:v=>v+'h' } }, y:{ grid:GRID, ticks:TICK } } } }); }
     if (refOpType.current) { destroy('opType'); const mo = {}; flights.forEach(f => { const m=f.date.slice(0,7); mo[m]=(mo[m]||0)+f.takeoffs; }); const keys = Object.keys(mo).sort().slice(-8); chartInst.current.opType = new Ch(refOpType.current, { type:'line', data:{ labels:keys.map(k=>k.slice(5)+'/'+k.slice(2,4)), datasets:[{ label:'Takeoffs', data:keys.map(k=>mo[k]), borderColor:'#2DD4BF', backgroundColor:'#2DD4BF18', pointBackgroundColor:'#2DD4BF', tension:0.4, fill:true, pointRadius:4 }] }, options:{ ...base, scales:{ y:{ grid:GRID, ticks:TICK }, x:{ grid:GRID, ticks:TICK } } } }); }
+    if (refRisk.current && missions) {
+      destroy('risk');
+      const scored = missions.filter(m => m.riskScore != null && m.date).sort((a,b) => a.date.localeCompare(b.date));
+      const labels = scored.map(m => m.date);
+      const data = scored.map(m => m.riskScore);
+      const colors = scored.map(m => { const lvl = getRiskLevel(m.riskScore); return lvl.color; });
+      chartInst.current.risk = new Ch(refRisk.current, { type:'line', data:{ labels, datasets:[{ label:'Risk Score', data, borderColor:'#F59E0B', backgroundColor:'#F59E0B18', pointBackgroundColor:colors, pointBorderColor:colors, pointRadius:6, pointHoverRadius:8, tension:0.3, fill:true }] }, options:{ ...base, plugins:{ ...base.plugins, tooltip:{ ...base.plugins.tooltip, callbacks:{ label:(ctx) => { const m = scored[ctx.dataIndex]; const lvl = getRiskLevel(m.riskScore); return `${m.name}: ${m.riskScore}/${RISK_MAX} (${lvl.label})`; } } } }, scales:{ y:{ grid:GRID, ticks:TICK, min:0, max:RISK_MAX, title:{ display:true, text:'Risk Score', color:'#94A3B8', font:{ family:'Space Mono, monospace', size:10 } } }, x:{ grid:GRID, ticks:TICK } } } });
+    }
     return () => { Object.keys(chartInst.current).forEach(k => destroy(k)); };
-  }, [chartReady, flights, aircraft, pilots]);
+  }, [chartReady, flights, aircraft, pilots, missions]);
   const totHrs = flights.reduce((a,f) => a + f.durationMin/60, 0);
   if (!chartReady) return <div style={{ padding:60, textAlign:'center', fontFamily:C.mono, fontSize:11, color:C.dim }}>Loading Chart.js…</div>;
   return (
@@ -1719,10 +1990,21 @@ function Analytics({ flights, aircraft, pilots, activeUser }) {
         <Card style={{ padding:'16px 20px' }}><div style={{ fontSize:10, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:14 }}>Monthly Flight Hours</div><div style={{ height:220 }}><canvas ref={refMonthly}/></div></Card>
         <Card style={{ padding:'16px 20px' }}><div style={{ fontSize:10, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:14 }}>Aircraft Utilization</div><div style={{ height:220 }}><canvas ref={refAcUtil}/></div></Card>
       </div>
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:14 }}>
         <Card style={{ padding:'16px 20px' }}><div style={{ fontSize:10, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:14 }}>Pilot Hours Breakdown</div><div style={{ height:200 }}><canvas ref={refPilotHrs}/></div></Card>
         <Card style={{ padding:'16px 20px' }}><div style={{ fontSize:10, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:14 }}>Monthly Operations</div><div style={{ height:200 }}><canvas ref={refOpType}/></div></Card>
       </div>
+      {missions && missions.filter(m => m.riskScore != null).length > 0 && (
+        <Card style={{ padding:'16px 20px' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
+            <div style={{ fontSize:10, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase' }}>Risk Score Trend (Scored Missions)</div>
+            <div style={{ display:'flex', gap:10 }}>
+              {RISK_LEVELS.map(rl => (<div key={rl.label} style={{ display:'flex', alignItems:'center', gap:5, fontSize:9, fontFamily:C.mono, color:rl.color }}><div style={{ width:8, height:8, borderRadius:'50%', background:rl.color }}/>{rl.label}</div>))}
+            </div>
+          </div>
+          <div style={{ height:220 }}><canvas ref={refRisk}/></div>
+        </Card>
+      )}
     </div>
   );
 }
@@ -2131,6 +2413,7 @@ export default function App() {
               </div>
             )}
           </div>
+          <NotificationBell notifications={buildNotifications(aircraft, pilots, batteries, incidents, missions, flights)} onSelectTab={setTab}/>
           <div style={{ display:'flex', alignItems:'center', gap:6 }}><div style={{ width:6, height:6, borderRadius:'50%', background:C.green, boxShadow:`0 0 5px ${C.green}` }}/><span style={{ fontSize:10, color:C.dim, fontFamily:C.mono }}>ONLINE</span></div>
           <span style={{ fontSize:10, color:C.dim, fontFamily:C.mono }}>{TODAY} · {timeStr}</span>
         </div>
@@ -2142,7 +2425,7 @@ export default function App() {
         {tab==='Dashboard' && <ErrorBoundary tab="Dashboard"><Dashboard flights={flights} missions={missions} aircraft={aircraft} pilots={pilots} batteries={batteries} incidents={incidents} setTab={setTab}/></ErrorBoundary>}
         {tab==='Missions' && <ErrorBoundary tab="Missions"><Missions missions={missions} setMissions={setMissions} aircraft={aircraft} setAircraft={setAircraft} pilots={pilots} setPilots={setPilots} orgUsers={orgUsers} flights={flights} setFlights={setFlights} activeUser={activeUser} addAudit={addAudit}/></ErrorBoundary>}
         {tab==='Assets' && <ErrorBoundary tab="Assets"><Assets aircraft={aircraft} setAircraft={setAircraft} batteries={batteries} setBatteries={setBatteries} equipment={equipment} setEquipment={setEquipment} pilots={pilots} setPilots={setPilots} flights={flights} activeUser={activeUser} addAudit={addAudit}/></ErrorBoundary>}
-        {tab==='Analytics' && <ErrorBoundary tab="Analytics"><Analytics flights={flights} aircraft={aircraft} pilots={pilots} activeUser={activeUser}/></ErrorBoundary>}
+        {tab==='Analytics' && <ErrorBoundary tab="Analytics"><Analytics flights={flights} aircraft={aircraft} pilots={pilots} missions={missions} activeUser={activeUser}/></ErrorBoundary>}
         {tab==='Incidents' && <ErrorBoundary tab="Incidents"><Incidents incidents={incidents} setIncidents={setIncidents} aircraft={aircraft} pilots={pilots} activeUser={activeUser}/></ErrorBoundary>}
         {tab==='AI Assistant' && <ErrorBoundary tab="AI Assistant"><AIAssistant flights={flights} missions={missions} aircraft={aircraft} pilots={pilots} batteries={batteries} incidents={incidents} equipment={equipment}/></ErrorBoundary>}
         {tab==='Org & Roles' && <ErrorBoundary tab="Org & Roles"><OrgRoles orgUsers={orgUsers} setOrgUsers={setOrgUsers} activeUserId={activeUserId} setActiveUserId={setActiveUserId} auditLog={auditLog} pilots={pilots}/></ErrorBoundary>}
