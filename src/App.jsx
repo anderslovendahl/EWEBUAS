@@ -29,7 +29,7 @@ class ErrorBoundary extends React.Component {
 }
 
 const migrateAircraft = a => ({ hours:0, lastMaint:'', nextMaint:'', weightLbs:0, maxAltFt:400, notes:'', status:'airworthy', type:'Multirotor', ...a });
-const migratePilot    = p => ({ hours:0, certNum:'', certExpiry:'', lastFlight:'', status:'current', cert:'Part 107', ...p });
+const migratePilot    = p => ({ hours:0, certNum:'', certExpiry:'', lastFlight:'', status:'current', cert:'Part 107', recurrentDate:'', recurrentDue:'', ...p });
 const migrateMission  = m => ({ waypoints:[], notams:'', populationDensity:'rural', crew:[], riskScore:null, riskOverride:null, lat:null, lon:null, location:'', altFt:400, time:'09:00', objective:'', notes:'', updatedAt:null, ...m });
 const migrateFlight   = f => ({ durationMin:0, takeoffs:1, landings:1, conditions:'', payload:'', notes:'', missionId:'', location:'', ...f });
 const migrateBattery  = b => ({ totalCycles:0, maxCycles:400, capacityPct:100, lastCharge:'', status:'good', notes:'', aircraftId:'', ...b });
@@ -225,11 +225,18 @@ const buildNotifications = (aircraft, pilots, batteries, incidents, missions, fl
   const today = new Date(TODAY);
   const notes = [];
   pilots.forEach(p => {
-    if (!p.certExpiry) return;
-    const days = Math.round((new Date(p.certExpiry) - today) / 86400000);
-    if (days < 0) notes.push({ id: `p-${p.id}-exp`, sev: 'critical', cat: 'Pilot', icon: 'P', msg: `${p.name} certificate EXPIRED ${Math.abs(days)}d ago`, tab: 'Assets' });
-    else if (days < 30) notes.push({ id: `p-${p.id}-soon`, sev: 'high', cat: 'Pilot', icon: 'P', msg: `${p.name} cert expires in ${days}d`, tab: 'Assets' });
-    else if (days < 90) notes.push({ id: `p-${p.id}-warn`, sev: 'medium', cat: 'Pilot', icon: 'P', msg: `${p.name} cert expires in ${days}d`, tab: 'Assets' });
+    if (p.certExpiry) {
+      const days = Math.round((new Date(p.certExpiry) - today) / 86400000);
+      if (days < 0) notes.push({ id: `p-${p.id}-exp`, sev: 'critical', cat: 'Pilot', icon: 'P', msg: `${p.name} certificate EXPIRED ${Math.abs(days)}d ago`, tab: 'Assets' });
+      else if (days < 30) notes.push({ id: `p-${p.id}-soon`, sev: 'high', cat: 'Pilot', icon: 'P', msg: `${p.name} cert expires in ${days}d`, tab: 'Assets' });
+      else if (days < 90) notes.push({ id: `p-${p.id}-warn`, sev: 'medium', cat: 'Pilot', icon: 'P', msg: `${p.name} cert expires in ${days}d`, tab: 'Assets' });
+    }
+    if (p.recurrentDue) {
+      const days = Math.round((new Date(p.recurrentDue) - today) / 86400000);
+      if (days < 0) notes.push({ id: `p-${p.id}-rec-exp`, sev: 'critical', cat: 'Training', icon: 'T', msg: `${p.name} recurrent training OVERDUE ${Math.abs(days)}d`, tab: 'Assets' });
+      else if (days < 30) notes.push({ id: `p-${p.id}-rec-soon`, sev: 'high', cat: 'Training', icon: 'T', msg: `${p.name} recurrent due in ${days}d`, tab: 'Assets' });
+      else if (days < 90) notes.push({ id: `p-${p.id}-rec-warn`, sev: 'medium', cat: 'Training', icon: 'T', msg: `${p.name} recurrent due in ${days}d`, tab: 'Assets' });
+    }
   });
   aircraft.forEach(a => {
     if (!a.nextMaint) return;
@@ -283,6 +290,42 @@ const callAI = async (messages, sys, maxTokens = 1200) => {
   const d = await r.json();
   return d.content?.map(b => b.text || '').join('') || 'No response.';
 };
+
+const exportAllData = () => {
+  const data = {
+    version: '1.0',
+    exportedAt: new Date().toISOString(),
+    aircraft: JSON.parse(localStorage.getItem('uas:ac') || '[]'),
+    pilots: JSON.parse(localStorage.getItem('uas:pilots') || '[]'),
+    missions: JSON.parse(localStorage.getItem('uas:missions') || '[]'),
+    flights: JSON.parse(localStorage.getItem('uas:flights') || '[]'),
+    batteries: JSON.parse(localStorage.getItem('uas:bat') || '[]'),
+    incidents: JSON.parse(localStorage.getItem('uas:incidents') || '[]'),
+    equipment: JSON.parse(localStorage.getItem('uas:equipment') || '[]'),
+    orgUsers: JSON.parse(localStorage.getItem('uas:orgUsers') || '[]'),
+    auditLog: JSON.parse(localStorage.getItem('uas:audit') || '[]'),
+    templates: JSON.parse(localStorage.getItem('uas:templates') || '[]'),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const date = new Date().toISOString().split('T')[0];
+  Object.assign(document.createElement('a'), { href: url, download: `eweb-uas-backup-${date}.json` }).click();
+  URL.revokeObjectURL(url);
+};
+
+const importAllData = (file) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      const keys = { aircraft: 'uas:ac', pilots: 'uas:pilots', missions: 'uas:missions', flights: 'uas:flights', batteries: 'uas:bat', incidents: 'uas:incidents', equipment: 'uas:equipment', orgUsers: 'uas:orgUsers', auditLog: 'uas:audit', templates: 'uas:templates' };
+      Object.entries(keys).forEach(([dk, sk]) => { if (data[dk]) localStorage.setItem(sk, JSON.stringify(data[dk])); });
+      resolve(data);
+    } catch (err) { reject(err); }
+  };
+  reader.onerror = () => reject(new Error('File read error'));
+  reader.readAsText(file);
+});
 
 const exportCSV = (flights, aircraft, pilots, missions) => {
   const hdr = ['Date','Mission','Location','Aircraft','Pilot','Duration(min)','Takeoffs','Landings','Payload','Notes'];
@@ -340,6 +383,60 @@ const printPreFlight = (mission, ac, pilot, checklist, checked, notams) => {
   win.document.close();
   setTimeout(() => win.print(), 400);
 };
+const printMissionBriefing = (mission, ac, pilot, crew, pilots, orgUsers, missions) => {
+  const now = new Date().toLocaleString();
+  const win = window.open('', '_blank', 'width=850,height=950');
+  if (!win) return;
+  const crewRows = (crew || []).map(c => {
+    const orgUser = (orgUsers || []).find(u => u.id === c.pilotId);
+    const p = pilots.find(pp => pp.id === c.pilotId);
+    const name = orgUser?.name || p?.name || 'Unknown';
+    const cert = p ? `${p.cert} #${p.certNum||'—'}` : '—';
+    return `<tr><td>${c.role}</td><td>${name}</td><td>${cert}</td><td>${c.briefedAt ? '✓ ' + new Date(c.briefedAt).toLocaleString() : 'Not briefed'}</td></tr>`;
+  }).join('');
+  const rl = mission.riskScore != null ? getRiskLevel(mission.riskScore) : null;
+  win.document.write(`<!DOCTYPE html><html><head><title>Mission Briefing — ${mission.name}</title>
+  <style>body{font-family:monospace;background:#fff;color:#111;padding:32px;font-size:11px;line-height:1.5;}
+  h1{font-size:18px;margin:0 0 4px;}h2{font-size:13px;margin:18px 0 6px;text-transform:uppercase;border-bottom:2px solid #000;padding-bottom:4px;letter-spacing:0.05em;}
+  .sub{color:#555;font-size:10px;margin-bottom:24px;}
+  .meta{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;background:#f5f5f5;padding:14px;border-radius:6px;margin-bottom:18px;}
+  .ml{font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:#777;margin-bottom:2px;}.mv{font-size:12px;font-weight:700;}
+  table{width:100%;border-collapse:collapse;margin:8px 0;}th,td{padding:6px 10px;text-align:left;border-bottom:1px solid #ddd;font-size:11px;}th{background:#f5f5f5;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:#555;}
+  .risk-${rl?.label.toLowerCase()||'na'}{display:inline-block;padding:3px 10px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:0.1em;}
+  .risk-low{background:#dcfce7;color:#166534;}.risk-medium{background:#fef3c7;color:#92400e;}.risk-high{background:#ffedd5;color:#9a3412;}.risk-critical{background:#fee2e2;color:#991b1b;}
+  .body{font-size:11px;line-height:1.6;background:#fafafa;border:1px solid #eee;border-radius:4px;padding:12px;white-space:pre-wrap;}
+  .footer{margin-top:32px;padding-top:16px;border-top:2px solid #000;display:grid;grid-template-columns:1fr 1fr 1fr;gap:32px;}
+  .sig{border-top:1px solid #000;padding-top:6px;font-size:9px;color:#777;}
+  </style></head><body>
+  <h1>EWEB UAS OPS — Mission Briefing Document</h1>
+  <div class="sub">Generated: ${now} · Mission ID: ${mission.id}</div>
+  <div class="meta">
+    <div><div class="ml">Mission Name</div><div class="mv">${mission.name}</div></div>
+    <div><div class="ml">Status</div><div class="mv">${mission.status.toUpperCase()}</div></div>
+    <div><div class="ml">Date / Time</div><div class="mv">${mission.date} ${mission.time}</div></div>
+    <div><div class="ml">Location</div><div class="mv">${mission.location}</div></div>
+    <div><div class="ml">Coordinates</div><div class="mv">${mission.lat?.toFixed(4)||'—'}, ${mission.lon?.toFixed(4)||'—'}</div></div>
+    <div><div class="ml">Max Altitude</div><div class="mv">${mission.altFt}ft AGL</div></div>
+    <div><div class="ml">Aircraft</div><div class="mv">${ac?.tail||'—'} — ${ac?.model||''}</div></div>
+    <div><div class="ml">Pilot in Command</div><div class="mv">${pilot?.name||'—'}</div></div>
+    <div><div class="ml">Population Density</div><div class="mv">${(mission.populationDensity||'rural').toUpperCase()}</div></div>
+  </div>
+  <h2>Mission Objective</h2>
+  <div class="body">${mission.objective || 'No objective specified.'}</div>
+  ${mission.notes ? `<h2>Mission Notes</h2><div class="body">${mission.notes}</div>` : ''}
+  <h2>Crew Manifest</h2>
+  ${crew && crew.length ? `<table><thead><tr><th>Role</th><th>Name</th><th>Certificate</th><th>Briefed</th></tr></thead><tbody>${crewRows}</tbody></table>` : '<div style="color:#777;font-style:italic">No crew assigned</div>'}
+  ${rl ? `<h2>Risk Assessment</h2><div>Risk Score: <strong>${mission.riskScore}/${RISK_MAX}</strong> · <span class="risk-${rl.label.toLowerCase()}">${rl.label}</span>${mission.riskOverride ? `<div style="margin-top:8px;padding:8px;background:#fff7ed;border-left:3px solid #ea580c">⚠ Override on record by <strong>${mission.riskOverride.by}</strong>: ${mission.riskOverride.reason}</div>` : ''}</div>` : ''}
+  ${mission.notams ? `<h2>NOTAMs / Airspace Authorization</h2><div class="body">${mission.notams}</div>` : ''}
+  <div class="footer">
+    <div><div class="sig">Pilot in Command — ${pilot?.name||''}</div></div>
+    <div><div class="sig">Safety Officer / Reviewer</div></div>
+    <div><div class="sig">Date / Time of Briefing</div></div>
+  </div></body></html>`);
+  win.document.close();
+  setTimeout(() => win.print(), 400);
+};
+
 const printIncident = (inc, pilotName, acTail) => {
   const now = new Date().toLocaleString();
   const win = window.open('', '_blank', 'width=800,height=700');
@@ -831,6 +928,74 @@ function WeatherForecast({ hourly }) {
   );
 }
 
+function CommandPalette({ open, onClose, missions, aircraft, pilots, batteries, equipment, incidents, setTab, onOpenMission, onCreateMission, onExport, onImport, onSwitchView }) {
+  const [query, setQuery] = useState('');
+  const [selected, setSelected] = useState(0);
+  const inputRef = useRef(null);
+  useEffect(() => { if (open) { setQuery(''); setSelected(0); setTimeout(() => inputRef.current?.focus(), 50); } }, [open]);
+  const items = [];
+  ['Dashboard', 'Missions', 'Assets', 'Analytics', 'Incidents', 'AI Assistant', 'Org & Roles'].forEach(t => items.push({ type: 'nav', label: `Go to ${t}`, hint: 'Tab', action: () => setTab(t) }));
+  items.push({ type: 'action', label: 'New Mission', hint: 'Action', action: () => { setTab('Missions'); onCreateMission?.(); } });
+  items.push({ type: 'action', label: 'Open Calendar View', hint: 'Action', action: () => { setTab('Missions'); onSwitchView?.('calendar'); } });
+  items.push({ type: 'action', label: 'Export All Data (JSON Backup)', hint: 'Action', action: () => onExport?.() });
+  items.push({ type: 'action', label: 'Import Data from Backup', hint: 'Action', action: () => onImport?.() });
+  missions.forEach(m => items.push({ type: 'mission', label: m.name, sub: `${m.date} · ${m.location} · ${m.status}`, hint: 'Mission', action: () => { setTab('Missions'); onOpenMission?.(m.id); } }));
+  aircraft.forEach(a => items.push({ type: 'aircraft', label: a.tail, sub: `${a.model} · ${a.status} · ${a.hours}h`, hint: 'Aircraft', action: () => setTab('Assets') }));
+  pilots.forEach(p => items.push({ type: 'pilot', label: p.name, sub: `${p.cert} · ${p.status} · ${p.hours}h`, hint: 'Pilot', action: () => setTab('Assets') }));
+  batteries.forEach(b => items.push({ type: 'battery', label: b.label, sub: `${b.totalCycles}/${b.maxCycles} cycles · ${b.capacityPct}%`, hint: 'Battery', action: () => setTab('Assets') }));
+  equipment.forEach(e => items.push({ type: 'equipment', label: e.name, sub: `${e.type} · ${e.status}`, hint: 'Equipment', action: () => setTab('Assets') }));
+  incidents.forEach(i => items.push({ type: 'incident', label: `${i.type} incident`, sub: `${i.date} · ${i.severity} · ${i.status}`, hint: 'Incident', action: () => setTab('Incidents') }));
+  const q = query.toLowerCase().trim();
+  const filtered = q ? items.filter(it => (it.label + ' ' + (it.sub||'') + ' ' + it.hint).toLowerCase().includes(q)).slice(0, 30) : items.slice(0, 12);
+  useEffect(() => { setSelected(0); }, [query]);
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (e.key === 'Escape') { onClose(); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); setSelected(s => Math.min(s + 1, filtered.length - 1)); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); setSelected(s => Math.max(s - 1, 0)); }
+      else if (e.key === 'Enter') { e.preventDefault(); const item = filtered[selected]; if (item) { item.action(); onClose(); } }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [open, filtered, selected, onClose]);
+  if (!open) return null;
+  const typeCol = { nav: C.amber, action: C.teal, mission: C.blue, aircraft: C.amber, pilot: C.purple, battery: C.blue, equipment: C.green, incident: C.orange };
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, paddingTop: 100 }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: '90%', maxWidth: 600, background: C.card2, border: `1px solid ${C.border2}`, borderRadius: 10, boxShadow: '0 20px 60px rgba(0,0,0,0.7)', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '70vh' }}>
+        <div style={{ padding: '12px 16px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke={C.dim} strokeWidth="1.5"/><line x1="11" y1="11" x2="14" y2="14" stroke={C.dim} strokeWidth="1.5" strokeLinecap="round"/></svg>
+          <input ref={inputRef} value={query} onChange={e => setQuery(e.target.value)} placeholder="Search missions, aircraft, pilots… or type a command" style={{ flex: 1, background: 'transparent', border: 'none', color: C.text, fontFamily: C.mono, fontSize: 13, outline: 'none', padding: 0 }}/>
+          <span style={{ fontSize: 9, fontFamily: C.mono, color: C.dim, background: C.card, padding: '3px 7px', borderRadius: 4, border: `1px solid ${C.border}` }}>ESC</span>
+        </div>
+        <div style={{ overflowY: 'auto', flex: 1 }}>
+          {filtered.length === 0 ? (
+            <div style={{ padding: 32, textAlign: 'center', fontSize: 11, fontFamily: C.mono, color: C.dim }}>No matches for "{query}"</div>
+          ) : (
+            filtered.map((item, i) => {
+              const tc = typeCol[item.type] || C.amber;
+              return (
+                <div key={i} onMouseEnter={() => setSelected(i)} onClick={() => { item.action(); onClose(); }} style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', background: selected === i ? `${C.amber}10` : 'transparent', borderLeft: `3px solid ${selected === i ? C.amber : 'transparent'}` }}>
+                  <span style={{ fontSize: 9, fontFamily: C.mono, color: tc, background: `${tc}18`, border: `1px solid ${tc}40`, borderRadius: 3, padding: '2px 7px', minWidth: 60, textAlign: 'center', fontWeight: 700, textTransform: 'uppercase' }}>{item.hint}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, color: C.text }}>{item.label}</div>
+                    {item.sub && <div style={{ fontSize: 10, color: C.dim, fontFamily: C.mono, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.sub}</div>}
+                  </div>
+                  {selected === i && <span style={{ fontSize: 9, fontFamily: C.mono, color: C.dim }}>↵</span>}
+                </div>
+              );
+            })
+          )}
+        </div>
+        <div style={{ padding: '8px 16px', borderTop: `1px solid ${C.border}`, fontSize: 9, fontFamily: C.mono, color: C.dim, display: 'flex', gap: 14 }}>
+          <span>↑↓ Navigate</span><span>↵ Select</span><span>esc Close</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function NotificationBell({ notifications, onSelectTab }) {
   const [open, setOpen] = useState(false);
   const sevCol = { critical: C.red, high: C.orange, medium: C.amber, low: C.dim };
@@ -964,6 +1129,53 @@ function CalendarView({ missions, aircraft, pilots, onOpenMission }) {
         ))}
       </Card>
     </div>
+  );
+}
+
+function DensityAltitudePanel({ lat, lon, altFt, aircraft }) {
+  const [wx, setWx] = useState(null);
+  const [elevation, setElevation] = useState(null);
+  useEffect(() => {
+    if (!lat || !lon) return;
+    (async () => {
+      try {
+        const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,surface_pressure&temperature_unit=fahrenheit&timezone=auto`);
+        const d = await r.json();
+        if (d.current) {
+          setWx(d.current);
+          setElevation(d.elevation || 500);
+        }
+      } catch (e) { /* ignore */ }
+    })();
+  }, [lat, lon]);
+  if (!wx || !elevation) return null;
+  const fieldElev = Math.round(elevation * 3.28084);
+  const tempF = wx.temperature_2m;
+  const pressureInHg = wx.surface_pressure ? wx.surface_pressure * 0.02953 : 29.92;
+  const da = calcDensityAlt(fieldElev, tempF, pressureInHg);
+  const flightAlt = fieldElev + (altFt || 400);
+  const flightDA = calcDensityAlt(flightAlt, tempF, pressureInHg);
+  const daDelta = da - fieldElev;
+  const sev = daDelta > 2000 ? C.red : daDelta > 1000 ? C.orange : daDelta > 500 ? C.amber : C.green;
+  const perfNote = daDelta > 2000 ? 'Significant performance loss — verify margins' : daDelta > 1000 ? 'Reduced performance — verify hover ceiling' : daDelta > 500 ? 'Moderate density altitude effect' : 'Standard performance conditions';
+  return (
+    <Card style={{ padding: '12px 14px', marginBottom: 10 }}>
+      <div style={{ fontSize: 10, fontFamily: C.mono, color: C.amber, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>Density Altitude · Performance</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 8 }}>
+        {[['Field Elev', `${fieldElev}ft MSL`, C.dim], ['DA at Field', `${da}ft`, sev], ['Flight Alt', `${flightAlt}ft MSL`, C.dim], ['DA at Flight', `${flightDA}ft`, sev]].map(([l, v, col]) => (
+          <div key={l} style={{ background: C.card2, borderRadius: 5, padding: '7px 9px', border: `1px solid ${col}30` }}>
+            <div style={{ fontSize: 9, fontFamily: C.mono, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 2 }}>{l}</div>
+            <div style={{ fontSize: 12, fontFamily: C.mono, color: col, fontWeight: 700 }}>{v}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 12, fontSize: 10, fontFamily: C.mono, color: C.dim, marginBottom: 6 }}>
+        <span>OAT: <strong style={{ color: C.text }}>{tempF?.toFixed(0)}°F</strong></span>
+        <span>Press: <strong style={{ color: C.text }}>{pressureInHg.toFixed(2)}"Hg</strong></span>
+        <span>ΔDA: <strong style={{ color: sev }}>+{daDelta}ft</strong></span>
+      </div>
+      <div style={{ fontSize: 11, color: sev, fontFamily: C.mono, padding: '6px 10px', background: `${sev}10`, border: `1px solid ${sev}40`, borderRadius: 5 }}>{perfNote}</div>
+    </Card>
   );
 }
 
@@ -1279,10 +1491,38 @@ const M_BLANK = { name:'', location:'', lat:null, lon:null, date:'', time:'08:00
 const M_STATUSES = ['planned','approved','completed','cancelled'];
 const FL_BLANK = { missionId:'', date:'', pilotId:'', aircraftId:'', durationMin:'', location:'', payload:'', takeoffs:'1', landings:'1', notes:'' };
 
-function MissionForm({ form, setForm, aircraft, pilots, orgUsers, isEdit }) {
+function MissionForm({ form, setForm, aircraft, pilots, orgUsers, isEdit, templates, setTemplates }) {
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
+  const saveAsTemplate = () => {
+    const name = window.prompt('Save as template — name:', form.name + ' template');
+    if (!name?.trim()) return;
+    const tmpl = { id: uid(), name: name.trim(), createdAt: new Date().toISOString(), data: { name: form.name, location: form.location, lat: form.lat, lon: form.lon, time: form.time, objective: form.objective, aircraftId: form.aircraftId, pilotId: form.pilotId, altFt: form.altFt, notes: form.notes, populationDensity: form.populationDensity, crew: (form.crew || []).map(c => ({ ...c, briefedAt: null })) } };
+    setTemplates(t => [...(t || []), tmpl]);
+  };
+  const loadTemplate = (id) => {
+    const t = (templates || []).find(x => x.id === id);
+    if (!t) return;
+    setForm(f => ({ ...f, ...t.data, date: f.date, status: f.status || 'planned' }));
+  };
+  const deleteTemplate = (id) => {
+    if (!window.confirm('Delete this template?')) return;
+    setTemplates(t => (t || []).filter(x => x.id !== id));
+  };
   return (
     <div>
+      {!isEdit && (templates || []).length > 0 && (
+        <div style={{ marginBottom: 12, padding: '10px 12px', background: C.card2, border: `1px solid ${C.teal}30`, borderRadius: 6 }}>
+          <div style={{ fontSize: 9, fontFamily: C.mono, color: C.teal, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>Mission Templates</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {(templates || []).map(t => (
+              <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 4, background: C.card, border: `1px solid ${C.teal}40`, borderRadius: 4, padding: '4px 8px' }}>
+                <button onClick={() => loadTemplate(t.id)} style={{ background: 'transparent', border: 'none', color: C.teal, fontSize: 11, fontFamily: C.mono, cursor: 'pointer' }}>{t.name}</button>
+                <button onClick={() => deleteTemplate(t.id)} style={{ background: 'transparent', border: 'none', color: C.dim, fontSize: 11, cursor: 'pointer', padding: '0 4px' }} title="Delete">×</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
         <Field label="Mission Name"><input value={form.name} onChange={set('name')} placeholder="Pipeline Survey Alpha" style={{ width:'100%' }}/></Field>
         <Field label="Location"><input value={form.location} onChange={set('location')} placeholder="Eugene, OR" style={{ width:'100%' }}/></Field>
@@ -1312,11 +1552,21 @@ function MissionForm({ form, setForm, aircraft, pilots, orgUsers, isEdit }) {
       <div style={{ marginTop:4, marginBottom:8 }}>
         <MapPicker lat={form.lat} lon={form.lon} onChange={(lat, lon) => setForm(f => ({ ...f, lat, lon }))}/>
       </div>
+      {form.name && (
+        <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${C.border}`, display: 'flex', justifyContent: 'flex-end' }}>
+          <Btn variant='teal' onClick={saveAsTemplate} xstyle={{ padding: '5px 12px', fontSize: 10 }}>Save as Template</Btn>
+        </div>
+      )}
     </div>
   );
 }
 
 function MissionWorkspace({ mission, missions, setMissions, flights, setFlights, aircraft, setAircraft, pilots, setPilots, orgUsers, activeUser, addAudit, onClose }) {
+  const printBriefing = () => {
+    const ac = aircraft.find(a => a.id === mission.aircraftId);
+    const pilot = pilots.find(p => p.id === mission.pilotId);
+    printMissionBriefing(mission, ac, pilot, mission.crew, pilots, orgUsers, missions);
+  };
   const [sub, setSub] = useState('Overview');
   const SUBS = ['Overview','Pre-Flight','Flight Log'];
   const SUB_COL = { Overview:C.amber, 'Pre-Flight':C.blue, 'Flight Log':C.green };
@@ -1417,6 +1667,7 @@ function MissionWorkspace({ mission, missions, setMissions, flights, setFlights,
           <div style={{ fontSize:11, color:C.dim, marginTop:2 }}>{mission.objective} · {aTail(mission.aircraftId)} · {pName(mission.pilotId)} · {mission.altFt}ft AGL</div>
         </div>
         <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+          <Btn variant='teal' onClick={printBriefing} xstyle={{ padding:'6px 12px' }}>Print Briefing</Btn>
           {canApprove && mission.status==='planned' && <Btn variant='blue' onClick={advance}>Approve</Btn>}
           {canComplete && mission.status==='approved' && <Btn variant='green' onClick={advance}>Complete</Btn>}
           {canEdit && (mission.status==='planned'||mission.status==='approved') && <Btn variant='red' onClick={cancelMission}>Cancel</Btn>}
@@ -1455,6 +1706,7 @@ function MissionWorkspace({ mission, missions, setMissions, flights, setFlights,
             );
           })()}
           {mission.lat && mission.date && <SunTimesPanel lat={mission.lat} lon={mission.lon} date={mission.date}/>}
+          {mission.lat && <DensityAltitudePanel lat={mission.lat} lon={mission.lon} altFt={mission.altFt} aircraft={ac}/>}
           <div style={{ fontSize:10, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:8 }}>Mission Location</div>
           <MissionMapView mission={mission}/>
           <WeatherPanel location={mission.location} lat={mission.lat} lon={mission.lon}/>
@@ -1597,7 +1849,7 @@ function ConflictBadge({ mission, missions, flights }) {
   return (<span style={{ fontSize: 9, fontFamily: C.mono, color: C.red, background: `${C.red}18`, border: `1px solid ${C.red}44`, borderRadius: 3, padding: '1px 6px', fontWeight: 700, letterSpacing: '0.05em' }} title={conflicts.map(c => c.msg).join('\n')}>⚠ {conflicts.length} CONFLICT{conflicts.length > 1 ? 'S' : ''}</span>);
 }
 
-function Missions({ missions, setMissions, aircraft, setAircraft, pilots, setPilots, orgUsers, flights, setFlights, activeUser, addAudit }) {
+function Missions({ missions, setMissions, aircraft, setAircraft, pilots, setPilots, orgUsers, flights, setFlights, activeUser, addAudit, templates, setTemplates, openNewRef, viewRef, openMissionRef }) {
   const canCreate = can(activeUser,'createMission'), canEdit = can(activeUser,'editMission'), canDelete = can(activeUser,'deleteMission');
   const canLog = can(activeUser,'logFlight'), canExport = can(activeUser,'exportData');
   const [workMissionId, setWorkMissionId] = useState(null);
@@ -1607,6 +1859,9 @@ function Missions({ missions, setMissions, aircraft, setAircraft, pilots, setPil
   const { confirm, confirmEl } = useConfirm();
 
   useEffect(() => { if (workMissionId && !missions.find(m => m.id===workMissionId)) setWorkMissionId(null); }, [missions, workMissionId]);
+  useEffect(() => { if (openNewRef) openNewRef.current = () => openNew(); }, []);
+  useEffect(() => { if (viewRef) viewRef.current = (v) => setView(v); }, []);
+  useEffect(() => { if (openMissionRef) openMissionRef.current = (id) => setWorkMissionId(id); }, []);
 
   const pName = id => pilots.find(p => p.id===id)?.name || '—';
   const aTail = id => aircraft.find(a => a.id===id)?.tail || '—';
@@ -1696,7 +1951,7 @@ function Missions({ missions, setMissions, aircraft, setAircraft, pilots, setPil
       )}
       {modal && (
         <Modal title={modal==='edit'?`Edit Mission — ${form.name}`:'New Mission'} onClose={closeModal} wide>
-          <MissionForm form={form} setForm={setForm} aircraft={aircraft} pilots={pilots} orgUsers={orgUsers} isEdit={modal==='edit'}/>
+          <MissionForm form={form} setForm={setForm} aircraft={aircraft} pilots={pilots} orgUsers={orgUsers} isEdit={modal==='edit'} templates={templates} setTemplates={setTemplates}/>
           <div style={{ display:'flex', justifyContent:'flex-end', gap:10 }}><Btn onClick={closeModal}>Cancel</Btn><Btn variant='primary' onClick={save} disabled={saving||!form.name||!form.date}>{saving?'Saving…':modal==='edit'?'Save Changes':'Create Mission'}</Btn></div>
         </Modal>
       )}
@@ -1709,7 +1964,7 @@ const BT_BLANK = { label:'', aircraftId:'', totalCycles:'0', maxCycles:'400', ca
 const EQ_BLANK = { name:'', type:'Payload', category:'Camera/Sensor', aircraftId:'', serialNum:'', status:'operational', purchaseDate:'', notes:'' };
 const EQ_TYPES = ['Payload','Ground Station','Accessory','Sensor','Software','Other'];
 const EQ_CATS = ['Camera/Sensor','Comms','GCS','Navigation','Safety','Battery/Power','Other'];
-const P_BLANK = { name:'', cert:'Part 107', certNum:'', certExpiry:'', lastFlight:'', hours:'0', status:'current' };
+const P_BLANK = { name:'', cert:'Part 107', certNum:'', certExpiry:'', lastFlight:'', hours:'0', status:'current', recurrentDate:'', recurrentDue:'' };
 
 function Assets({ aircraft, setAircraft, batteries, setBatteries, equipment, setEquipment, pilots, setPilots, flights, activeUser, addAudit }) {
   const [sub, setSub] = useState('Aircraft');
@@ -1861,10 +2116,11 @@ function Assets({ aircraft, setAircraft, batteries, setBatteries, equipment, set
               </div>
               <div style={{padding:'12px 16px'}}>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
-                  {[['Cert Expiry',p.certExpiry||'—'],['Last Flight',p.lastFlight||'—'],['Logged Hrs',loggedHrs(p.id)+'h'],['Total Hrs',Number(p.hours).toFixed(1)+'h']].map(([l,v])=>(<div key={l}><div style={{fontSize:9,color:C.dim,fontFamily:C.mono,textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:2}}>{l}</div><div style={{fontSize:11,color:C.text,fontFamily:C.mono}}>{v}</div></div>))}
+                  {[['Cert Expiry',p.certExpiry||'—'],['Last Flight',p.lastFlight||'—'],['Logged Hrs',loggedHrs(p.id)+'h'],['Total Hrs',Number(p.hours).toFixed(1)+'h'],['Recurrent Done',p.recurrentDate||'—'],['Recurrent Due',p.recurrentDue||'—']].map(([l,v])=>(<div key={l}><div style={{fontSize:9,color:C.dim,fontFamily:C.mono,textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:2}}>{l}</div><div style={{fontSize:11,color:C.text,fontFamily:C.mono}}>{v}</div></div>))}
                 </div>
                 {soon&&<div style={{background:`${C.amber}15`,border:`1px solid ${C.amber}40`,borderRadius:4,padding:'5px 10px',fontSize:10,color:C.amber,fontFamily:C.mono,marginBottom:10}}>Cert expires in {days} days</div>}
                 {exp&&<div style={{background:`${C.red}15`,border:`1px solid ${C.red}40`,borderRadius:4,padding:'5px 10px',fontSize:10,color:C.red,fontFamily:C.mono,marginBottom:10}}>Cert EXPIRED {Math.abs(days)} days ago</div>}
+                {(()=>{ if(!p.recurrentDue) return null; const rd=daysTo(p.recurrentDue); if(rd===null) return null; if(rd<0) return <div style={{background:`${C.red}15`,border:`1px solid ${C.red}40`,borderRadius:4,padding:'5px 10px',fontSize:10,color:C.red,fontFamily:C.mono,marginBottom:10}}>Recurrent training OVERDUE {Math.abs(rd)} days</div>; if(rd<60) return <div style={{background:`${C.orange}15`,border:`1px solid ${C.orange}40`,borderRadius:4,padding:'5px 10px',fontSize:10,color:C.orange,fontFamily:C.mono,marginBottom:10}}>Recurrent training due in {rd} days</div>; return null; })()}
                 {canEditPilots&&<div style={{display:'flex',gap:6}}><Btn variant='amber' onClick={()=>openPlEdit(p)} xstyle={{padding:'5px 10px',fontSize:10}}>Edit</Btn><Btn onClick={()=>delPl(p)} xstyle={{padding:'5px 10px',fontSize:10}}>Remove</Btn></div>}
               </div>
             </Card>);})}
@@ -1878,6 +2134,8 @@ function Assets({ aircraft, setAircraft, batteries, setBatteries, equipment, set
             <Field label="Certificate Expiry"><input type="date" value={plForm.certExpiry} onChange={setPlF('certExpiry')} style={{width:'100%'}}/></Field>
             <Field label="Last Flight Date"><input type="date" value={plForm.lastFlight} onChange={setPlF('lastFlight')} style={{width:'100%'}}/></Field>
             <Field label="Total Hours"><input type="number" value={plForm.hours} onChange={setPlF('hours')} style={{width:'100%'}}/></Field>
+            <Field label="Last Recurrent Training"><input type="date" value={plForm.recurrentDate||''} onChange={e=>{const v=e.target.value;const dueDate=v?new Date(new Date(v).setMonth(new Date(v).getMonth()+24)).toISOString().split('T')[0]:'';setPlForm(f=>({...f,recurrentDate:v,recurrentDue:dueDate}));}} style={{width:'100%'}}/></Field>
+            <Field label="Recurrent Due (auto +24mo)"><input type="date" value={plForm.recurrentDue||''} onChange={setPlF('recurrentDue')} style={{width:'100%'}}/></Field>
           </div>
           <div style={{display:'flex',justifyContent:'flex-end',gap:10,marginTop:16}}><Btn onClick={closePlModal}>Cancel</Btn><Btn variant='primary' onClick={savePl}>{plEditId?'Save Changes':'Add Pilot'}</Btn></div>
         </Modal>)}
@@ -2295,8 +2553,13 @@ export default function App() {
   const [orgUsers, setOrgUsers] = useState([]);
   const [activeUserId, setActiveUserId] = useState(null);
   const [auditLog, setAuditLog] = useState([]);
+  const [templates, setTemplates] = useState([]);
   const [ready, setReady] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const missionsOpenNewRef = useRef(null);
+  const missionsViewRef = useRef(null);
+  const missionsOpenRef = useRef(null);
   const activeUser = orgUsers.find(u => u.id===activeUserId) || null;
 
   const addAudit = (action, details) => {
@@ -2327,8 +2590,16 @@ export default function App() {
       const savedActiveId = await store.get('uas:activeUserId');
       setActiveUserId(savedActiveId?.id || SEED_ORG_USERS[0].id);
       setAuditLog((await store.get('uas:audit')) || []);
+      setTemplates((await store.get('uas:templates')) || []);
       setReady(true);
     })();
+  }, []);
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setPaletteOpen(o => !o); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
   }, []);
 
   useEffect(() => { if (ready) store.set('uas:ac', aircraft); }, [aircraft, ready]);
@@ -2341,6 +2612,7 @@ export default function App() {
   useEffect(() => { if (ready) store.set('uas:orgUsers', orgUsers); }, [orgUsers, ready]);
   useEffect(() => { if (ready) store.set('uas:activeUserId', { id:activeUserId }); }, [activeUserId, ready]);
   useEffect(() => { if (ready) store.set('uas:audit', auditLog); }, [auditLog, ready]);
+  useEffect(() => { if (ready) store.set('uas:templates', templates); }, [templates, ready]);
 
   if (!ready) return (<div style={{ background:C.bg, minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:C.mono, color:C.dim, fontSize:11, letterSpacing:'0.1em' }}>INITIALIZING EWEB UAS OPS…</div>);
 
@@ -2423,13 +2695,35 @@ export default function App() {
       </nav>
       <main style={{ padding:'24px', maxWidth:1200, margin:'0 auto' }}>
         {tab==='Dashboard' && <ErrorBoundary tab="Dashboard"><Dashboard flights={flights} missions={missions} aircraft={aircraft} pilots={pilots} batteries={batteries} incidents={incidents} setTab={setTab}/></ErrorBoundary>}
-        {tab==='Missions' && <ErrorBoundary tab="Missions"><Missions missions={missions} setMissions={setMissions} aircraft={aircraft} setAircraft={setAircraft} pilots={pilots} setPilots={setPilots} orgUsers={orgUsers} flights={flights} setFlights={setFlights} activeUser={activeUser} addAudit={addAudit}/></ErrorBoundary>}
+        {tab==='Missions' && <ErrorBoundary tab="Missions"><Missions missions={missions} setMissions={setMissions} aircraft={aircraft} setAircraft={setAircraft} pilots={pilots} setPilots={setPilots} orgUsers={orgUsers} flights={flights} setFlights={setFlights} activeUser={activeUser} addAudit={addAudit} templates={templates} setTemplates={setTemplates} openNewRef={missionsOpenNewRef} viewRef={missionsViewRef} openMissionRef={missionsOpenRef}/></ErrorBoundary>}
         {tab==='Assets' && <ErrorBoundary tab="Assets"><Assets aircraft={aircraft} setAircraft={setAircraft} batteries={batteries} setBatteries={setBatteries} equipment={equipment} setEquipment={setEquipment} pilots={pilots} setPilots={setPilots} flights={flights} activeUser={activeUser} addAudit={addAudit}/></ErrorBoundary>}
         {tab==='Analytics' && <ErrorBoundary tab="Analytics"><Analytics flights={flights} aircraft={aircraft} pilots={pilots} missions={missions} activeUser={activeUser}/></ErrorBoundary>}
         {tab==='Incidents' && <ErrorBoundary tab="Incidents"><Incidents incidents={incidents} setIncidents={setIncidents} aircraft={aircraft} pilots={pilots} activeUser={activeUser}/></ErrorBoundary>}
         {tab==='AI Assistant' && <ErrorBoundary tab="AI Assistant"><AIAssistant flights={flights} missions={missions} aircraft={aircraft} pilots={pilots} batteries={batteries} incidents={incidents} equipment={equipment}/></ErrorBoundary>}
         {tab==='Org & Roles' && <ErrorBoundary tab="Org & Roles"><OrgRoles orgUsers={orgUsers} setOrgUsers={setOrgUsers} activeUserId={activeUserId} setActiveUserId={setActiveUserId} auditLog={auditLog} pilots={pilots}/></ErrorBoundary>}
       </main>
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        missions={missions} aircraft={aircraft} pilots={pilots} batteries={batteries} equipment={equipment} incidents={incidents}
+        setTab={setTab}
+        onOpenMission={(id) => { setTab('Missions'); setTimeout(() => missionsOpenRef.current?.(id), 30); }}
+        onCreateMission={() => setTimeout(() => missionsOpenNewRef.current?.(), 30)}
+        onSwitchView={(v) => setTimeout(() => missionsViewRef.current?.(v), 30)}
+        onExport={() => { exportAllData(); addAudit('Data exported', 'Full JSON backup downloaded'); }}
+        onImport={() => {
+          const inp = document.createElement('input');
+          inp.type = 'file'; inp.accept = '.json,application/json';
+          inp.onchange = async (e) => {
+            const file = e.target.files?.[0]; if (!file) return;
+            if (!window.confirm(`Import "${file.name}"? This will REPLACE all current data.`)) return;
+            try { await importAllData(file); window.location.reload(); }
+            catch (err) { window.alert('Import failed: ' + err.message); }
+          };
+          inp.click();
+        }}
+      />
+      <button onClick={() => setPaletteOpen(true)} title="Command Palette (Ctrl+K / Cmd+K)" style={{ position: 'fixed', bottom: 18, right: 18, background: C.amber, color: '#000', border: 'none', borderRadius: '50%', width: 48, height: 48, cursor: 'pointer', boxShadow: '0 6px 18px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 90, fontFamily: C.mono, fontSize: 18, fontWeight: 700 }}>⌘K</button>
     </div>
   );
 }
