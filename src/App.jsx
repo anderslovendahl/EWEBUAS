@@ -100,7 +100,7 @@ const SEED_BATTERIES = [
   { id:'bt6', label:'eBee-Bat #001', aircraftId:'ac3', totalCycles:44, maxCycles:200, capacityPct:99, lastCharge:'2026-03-01', status:'good', notes:'Near-new' },
 ];
 const SEED_INCIDENTS = [
-  { id:'in1', date:'2026-02-14', pilotId:'p1', aircraftId:'ac1', location:'Eugene, OR', type:'Airspace', severity:'low', description:'Brief unintentional entry into Class C transition area due to GPS altitude display discrepancy. No conflicts. Pilot immediately descended and exited.', asrs:'', status:'submitted', notes:'GPS firmware updated post-incident.' },
+  { id:'in1', date:'2026-02-14', pilotId:'p1', aircraftId:'ac1', location:'Eugene, OR', type:'Airspace', severity:'low', description:'Brief unintentional entry into Class E extension near EUG due to GPS altitude display discrepancy. No conflicts. Pilot immediately descended and exited.', asrs:'', status:'submitted', notes:'GPS firmware updated post-incident.' },
 ];
 const SEED_EQUIPMENT = [
   { id:'eq1', name:'Zenmuse H20T', type:'Payload', category:'Camera/Sensor', aircraftId:'ac1', serialNum:'SN-H20T-00421', status:'operational', purchaseDate:'2024-06-01', notes:'RGB + Thermal + Laser rangefinder' },
@@ -130,7 +130,7 @@ const CHECKLIST = [
   { id:'ck19', cat:'Weather', item:'No thunderstorm activity within 5 NM' },
 ];
 const AIRPORTS = [
-  { name:'Eugene Airport', id:'EUG', lat:44.1246, lon:-123.2119, cls:'C', radiusNm:5 },
+  { name:'Eugene Airport', id:'EUG', lat:44.1246, lon:-123.2119, cls:'D', clsExt:'E', radiusNm:4, extRadiusNm:10 },
   { name:'Corvallis Municipal', id:'CVO', lat:44.4972, lon:-123.2903, cls:'D', radiusNm:4 },
   { name:'McNary Field Salem', id:'SLE', lat:44.9095, lon:-123.0027, cls:'D', radiusNm:4 },
   { name:'Portland Intl', id:'PDX', lat:45.5898, lon:-122.5951, cls:'C', radiusNm:10 },
@@ -159,14 +159,30 @@ const nmBetween = (lat1, lon1, lat2, lon2) => {
   const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 };
-const getAirspaceAdvisory = (lat, lon, altFt) => {
+const getAirspaceAdvisory = (lat, lon, altFt, tfrs) => {
   const w = [];
   if (altFt > 400) w.push({ level:'warn', msg:`Altitude ${altFt}ft exceeds 400ft AGL default` });
   AIRPORTS.forEach(ap => {
     const nm = nmBetween(lat, lon, ap.lat, ap.lon);
-    if (nm <= ap.radiusNm) w.push({ level:'stop', msg:`Inside Class ${ap.cls} (${ap.id}) — LAANC required (${nm.toFixed(1)} NM)` });
+    if (nm <= ap.radiusNm) w.push({ level:'stop', msg:`Inside Class ${ap.cls}${ap.clsExt ? ' (+ Class '+ap.clsExt+' extensions)' : ''} (${ap.id}) — LAANC required (${nm.toFixed(1)} NM)` });
+    else if (ap.clsExt && ap.extRadiusNm && nm <= ap.extRadiusNm) w.push({ level:'warn', msg:`Inside Class ${ap.clsExt} extension (${ap.id}) — ${nm.toFixed(1)} NM from ${ap.cls} core` });
     else if (nm <= ap.radiusNm + 3) w.push({ level:'info', msg:`${ap.id} Class ${ap.cls}: ${nm.toFixed(1)} NM — near boundary` });
+    else if (ap.clsExt && ap.extRadiusNm && nm <= ap.extRadiusNm + 2) w.push({ level:'info', msg:`${ap.id} Class ${ap.clsExt} ext: ${nm.toFixed(1)} NM — near extension boundary` });
   });
+  if (tfrs && tfrs.length) {
+    const today = new Date();
+    tfrs.forEach(tfr => {
+      if (!tfr.lat || !tfr.lon) return;
+      const start = tfr.startDate ? new Date(tfr.startDate + (tfr.startTime ? 'T'+tfr.startTime : '')) : null;
+      const end = tfr.endDate ? new Date(tfr.endDate + (tfr.endTime ? 'T'+tfr.endTime : '')) : null;
+      const active = (!start || start <= today) && (!end || end >= today);
+      const upcoming = start && start > today && (start - today) < 7*86400000;
+      if (!active && !upcoming) return;
+      const nm = nmBetween(lat, lon, tfr.lat, tfr.lon);
+      if (nm <= (tfr.radiusNm || 3)) w.push({ level:'stop', msg:`Inside TFR: ${tfr.description || tfr.notamId || 'Unknown'} (${nm.toFixed(1)} NM)${active ? '' : ' — upcoming'}` });
+      else if (nm <= (tfr.radiusNm || 3) + 5) w.push({ level:'warn', msg:`Near TFR: ${tfr.description || tfr.notamId || 'Unknown'} (${nm.toFixed(1)} NM)${active ? '' : ' — upcoming'}` });
+    });
+  }
   if (!w.length) w.push({ level:'ok', msg:'No controlled airspace conflicts within 7 NM' });
   return w;
 };
@@ -206,6 +222,27 @@ const calcDensityAlt = (elevFt, tempF, pressureInHg = 29.92) => {
   return Math.round(pressureAlt + 120 * (tempC - isaTemp));
 };
 
+const TFR_TYPES = ['Security','Hazard','Space Operations','Special Event','VIP','Airshow','Wildfire','Stadium/Sporting','Other'];
+const TFR_BLANK = { notamId:'', type:'Other', description:'', lat:null, lon:null, radiusNm:3, altLow:0, altHigh:18000, startDate:'', startTime:'', endDate:'', endTime:'', source:'manual' };
+const DEFAULT_TFR_CONFIG = { lat:44.0521, lon:-123.0868, radiusNm:50, locationName:'Eugene, OR' };
+const migrateTfr = t => ({ ...TFR_BLANK, ...t });
+const getTfrStatus = (tfr) => {
+  const now = new Date();
+  const start = tfr.startDate ? new Date(tfr.startDate + (tfr.startTime ? 'T'+tfr.startTime : 'T00:00')) : null;
+  const end = tfr.endDate ? new Date(tfr.endDate + (tfr.endTime ? 'T'+tfr.endTime : 'T23:59')) : null;
+  if (end && end < now) return 'expired';
+  if (start && start > now) return 'upcoming';
+  return 'active';
+};
+const getActiveTfrs = (tfrs) => tfrs.filter(t => getTfrStatus(t) !== 'expired');
+const getTfrsInRadius = (tfrs, lat, lon, radiusNm) => {
+  if (!lat || !lon) return [];
+  return tfrs.filter(t => {
+    if (!t.lat || !t.lon) return false;
+    return nmBetween(lat, lon, t.lat, t.lon) <= radiusNm + (t.radiusNm || 0);
+  });
+};
+
 const checkScheduleConflicts = (mission, allMissions, allFlights) => {
   if (!mission.aircraftId || !mission.date) return [];
   const conflicts = [];
@@ -221,7 +258,7 @@ const checkScheduleConflicts = (mission, allMissions, allFlights) => {
   return conflicts;
 };
 
-const buildNotifications = (aircraft, pilots, batteries, incidents, missions, flights) => {
+const buildNotifications = (aircraft, pilots, batteries, incidents, missions, flights, tfrs, tfrConfig) => {
   const today = new Date(TODAY);
   const notes = [];
   pilots.forEach(p => {
@@ -264,6 +301,16 @@ const buildNotifications = (aircraft, pilots, batteries, incidents, missions, fl
       if (days <= 3) notes.push({ id: `m-${m.id}-risk`, sev: 'medium', cat: 'Mission', icon: 'M', msg: `"${m.name}" needs risk assessment (${days}d away)`, tab: 'Missions' });
     }
   });
+  if (tfrs && tfrConfig) {
+    const activeTfrs = getActiveTfrs(tfrs);
+    const monitored = getTfrsInRadius(activeTfrs, tfrConfig.lat, tfrConfig.lon, tfrConfig.radiusNm);
+    monitored.forEach(tfr => {
+      const st = getTfrStatus(tfr);
+      const dist = tfrConfig.lat ? nmBetween(tfrConfig.lat, tfrConfig.lon, tfr.lat, tfr.lon).toFixed(1) : '?';
+      if (st === 'active') notes.push({ id: `tfr-${tfr.id}-active`, sev: 'critical', cat: 'TFR', icon: 'T', msg: `Active TFR: ${tfr.description || tfr.notamId || 'Unknown'} (${dist} NM from ${tfrConfig.locationName || 'center'})`, tab: 'Dashboard' });
+      else if (st === 'upcoming') notes.push({ id: `tfr-${tfr.id}-upcoming`, sev: 'high', cat: 'TFR', icon: 'T', msg: `Upcoming TFR: ${tfr.description || tfr.notamId || 'Unknown'} starts ${tfr.startDate}`, tab: 'Dashboard' });
+    });
+  }
   return notes.sort((a,b) => { const order = { critical:0, high:1, medium:2, low:3 }; return (order[a.sev]||9) - (order[b.sev]||9); });
 };
 const useLeaflet = () => {
@@ -305,6 +352,8 @@ const exportAllData = () => {
     orgUsers: JSON.parse(localStorage.getItem('uas:orgUsers') || '[]'),
     auditLog: JSON.parse(localStorage.getItem('uas:audit') || '[]'),
     templates: JSON.parse(localStorage.getItem('uas:templates') || '[]'),
+    tfrs: JSON.parse(localStorage.getItem('uas:tfrs') || '[]'),
+    tfrConfig: JSON.parse(localStorage.getItem('uas:tfrConfig') || 'null'),
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -318,7 +367,7 @@ const importAllData = (file) => new Promise((resolve, reject) => {
   reader.onload = e => {
     try {
       const data = JSON.parse(e.target.result);
-      const keys = { aircraft: 'uas:ac', pilots: 'uas:pilots', missions: 'uas:missions', flights: 'uas:flights', batteries: 'uas:bat', incidents: 'uas:incidents', equipment: 'uas:equipment', orgUsers: 'uas:orgUsers', auditLog: 'uas:audit', templates: 'uas:templates' };
+      const keys = { aircraft: 'uas:ac', pilots: 'uas:pilots', missions: 'uas:missions', flights: 'uas:flights', batteries: 'uas:bat', incidents: 'uas:incidents', equipment: 'uas:equipment', orgUsers: 'uas:orgUsers', auditLog: 'uas:audit', templates: 'uas:templates', tfrs: 'uas:tfrs', tfrConfig: 'uas:tfrConfig' };
       Object.entries(keys).forEach(([dk, sk]) => { if (data[dk]) localStorage.setItem(sk, JSON.stringify(data[dk])); });
       resolve(data);
     } catch (err) { reject(err); }
@@ -545,11 +594,12 @@ const RISK_LEVELS = [
 const getRiskLevel = score => RISK_LEVELS.find(r => score <= r.max) || RISK_LEVELS[3];
 const RISK_OVERRIDE_THRESHOLD = 19;
 
-function calcRisk(mission, pilot, aircraft, wx) {
+function calcRisk(mission, pilot, aircraft, wx, tfrs) {
   const s = {};
   if (mission?.lat && mission?.lon) {
-    const w = getAirspaceAdvisory(mission.lat, mission.lon, mission.altFt || 0);
-    if (w.some(x => x.level==='stop'))      s.airspace = { v:6, note:'Inside controlled airspace' };
+    const w = getAirspaceAdvisory(mission.lat, mission.lon, mission.altFt || 0, tfrs);
+    if (w.some(x => x.level==='stop'))      s.airspace = { v:6, note:'Inside controlled airspace or TFR' };
+    else if (w.some(x => x.level==='warn')) s.airspace = { v:4, note:'Near controlled airspace or TFR' };
     else if (w.some(x => x.level==='info')) s.airspace = { v:3, note:'Near airspace boundary' };
     else                                     s.airspace = { v:0, note:'No airspace conflicts' };
   } else {
@@ -739,19 +789,19 @@ function WeatherPanel({ location, lat, lon }) {
     </div>
   );
 }
-function AirspacePanel({ location, lat, lon, altFt }) {
+function AirspacePanel({ location, lat, lon, altFt, tfrs }) {
   const [data, setData] = useState(null);
   const prevKey = useRef('');
   useEffect(() => {
-    const key = lat ? `${lat},${lon}` : location;
+    const key = lat ? `${lat},${lon},${(tfrs||[]).length}` : location;
     if (!key || key === prevKey.current) return;
     prevKey.current = key;
     (async () => {
       let lt = lat, ln = lon;
       if (!lt && location) { const g = await geocode(location); if (!g) { setData([]); return; } lt = g.lat; ln = g.lon; }
-      setData(getAirspaceAdvisory(lt, ln, altFt || 400));
+      setData(getAirspaceAdvisory(lt, ln, altFt || 400, tfrs));
     })();
-  }, [location, lat, lon, altFt]);
+  }, [location, lat, lon, altFt, tfrs]);
   if (!data) return null;
   const lc = { stop:C.red, warn:C.amber, info:C.blue, ok:C.green };
   const li = { stop:'!', warn:'!', info:'i', ok:'✓' };
@@ -775,7 +825,139 @@ function AirspacePanel({ location, lat, lon, altFt }) {
   );
 }
 
-function OpsMap({ missions, onSelectMission, height = 340 }) {
+function TFRPanel({ tfrs, setTfrs, tfrConfig, setTfrConfig, compact }) {
+  const [modal, setModal] = useState(false), [form, setForm] = useState(TFR_BLANK), [editId, setEditId] = useState(null);
+  const [configOpen, setConfigOpen] = useState(false), [locInput, setLocInput] = useState(tfrConfig.locationName || '');
+  const activeTfrs = getActiveTfrs(tfrs);
+  const monitored = getTfrsInRadius(activeTfrs, tfrConfig.lat, tfrConfig.lon, tfrConfig.radiusNm);
+  const openNew = () => { setForm({ ...TFR_BLANK }); setEditId(null); setModal(true); };
+  const openEdit = (tfr) => { setForm({ ...tfr }); setEditId(tfr.id); setModal(true); };
+  const save = () => {
+    if (!form.description && !form.notamId) return;
+    if (editId) setTfrs(ts => ts.map(t => t.id === editId ? { ...form, id: editId } : t));
+    else setTfrs(ts => [{ ...form, id: uid() }, ...ts]);
+    setModal(false);
+  };
+  const del = (id) => setTfrs(ts => ts.filter(t => t.id !== id));
+  const geocodeConfig = async () => {
+    if (!locInput) return;
+    const g = await geocode(locInput);
+    if (g) setTfrConfig(c => ({ ...c, lat: g.lat, lon: g.lon, locationName: locInput }));
+  };
+  const statusCol = { active: C.red, upcoming: C.amber, expired: C.dim };
+  const statusLabel = { active: 'ACTIVE', upcoming: 'UPCOMING', expired: 'EXPIRED' };
+  return (
+    <Card style={{ padding: 0 }}>
+      <div style={{ padding: '11px 16px', borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 12, fontFamily: C.mono, color: C.red, letterSpacing: '0.12em', textTransform: 'uppercase' }}>TFR Tracking</span>
+          {monitored.filter(t => getTfrStatus(t) === 'active').length > 0 && (
+            <span style={{ fontSize: 10, background: C.red, color: '#fff', borderRadius: 10, padding: '1px 7px', fontFamily: C.mono, fontWeight: 700, animation: 'pulse 2s infinite' }}>
+              {monitored.filter(t => getTfrStatus(t) === 'active').length} ACTIVE
+            </span>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button onClick={() => setConfigOpen(o => !o)} style={{ background: 'transparent', border: `1px solid ${C.border2}`, color: C.dim, borderRadius: 4, padding: '3px 8px', fontSize: 11, fontFamily: C.mono, cursor: 'pointer' }}>{configOpen ? 'Close' : 'Config'}</button>
+          <button onClick={openNew} style={{ background: 'transparent', border: `1px solid ${C.red}`, color: C.red, borderRadius: 4, padding: '3px 8px', fontSize: 11, fontFamily: C.mono, cursor: 'pointer' }}>+ Add TFR</button>
+        </div>
+      </div>
+      {configOpen && (
+        <div style={{ padding: '12px 16px', borderBottom: `1px solid ${C.border}`, background: `${C.card2}` }}>
+          <div style={{ fontSize: 11, color: C.dim, fontFamily: C.mono, marginBottom: 8, letterSpacing: '0.08em' }}>MONITORING CENTER</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, marginBottom: 8 }}>
+            <input value={locInput} onChange={e => setLocInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && geocodeConfig()} placeholder="Location name or address…" style={{ fontSize: 12 }}/>
+            <button onClick={geocodeConfig} style={{ background: C.amber, color: '#000', border: 'none', borderRadius: 6, padding: '6px 12px', fontSize: 11, fontFamily: C.mono, fontWeight: 600, cursor: 'pointer' }}>Set</button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+            <Field label="Latitude"><input type="number" step="0.001" value={tfrConfig.lat || ''} onChange={e => setTfrConfig(c => ({ ...c, lat: +e.target.value }))} style={{ width: '100%', fontSize: 12 }}/></Field>
+            <Field label="Longitude"><input type="number" step="0.001" value={tfrConfig.lon || ''} onChange={e => setTfrConfig(c => ({ ...c, lon: +e.target.value }))} style={{ width: '100%', fontSize: 12 }}/></Field>
+            <Field label="Radius (NM)"><input type="number" min="5" max="200" value={tfrConfig.radiusNm} onChange={e => setTfrConfig(c => ({ ...c, radiusNm: +e.target.value }))} style={{ width: '100%', fontSize: 12 }}/></Field>
+          </div>
+          <div style={{ fontSize: 11, color: C.dim, fontFamily: C.mono, marginTop: 6 }}>
+            Monitoring: {tfrConfig.locationName || `${tfrConfig.lat?.toFixed(4)}, ${tfrConfig.lon?.toFixed(4)}`} — {tfrConfig.radiusNm} NM radius
+          </div>
+        </div>
+      )}
+      <div style={{ padding: compact ? '8px 12px' : '10px 16px' }}>
+        {monitored.length === 0 && (
+          <div style={{ fontSize: 12, color: C.dim, fontFamily: C.mono, padding: '8px 0', textAlign: 'center' }}>
+            No active TFRs within {tfrConfig.radiusNm} NM of {tfrConfig.locationName || 'monitoring center'}
+          </div>
+        )}
+        {monitored.map(tfr => {
+          const st = getTfrStatus(tfr);
+          const sc = statusCol[st];
+          const dist = tfrConfig.lat ? nmBetween(tfrConfig.lat, tfrConfig.lon, tfr.lat, tfr.lon).toFixed(1) : '?';
+          return (
+            <div key={tfr.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 10px', borderRadius: 6, background: `${sc}10`, border: `1px solid ${sc}30`, marginBottom: 6, cursor: 'pointer' }} onClick={() => openEdit(tfr)}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: sc, marginTop: 5, flexShrink: 0, boxShadow: st === 'active' ? `0 0 6px ${sc}` : 'none' }}/>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: C.text }}>{tfr.description || tfr.notamId || 'Unnamed TFR'}</span>
+                  <span style={{ fontSize: 10, fontFamily: C.mono, color: sc, fontWeight: 700, letterSpacing: '0.1em' }}>{statusLabel[st]}</span>
+                </div>
+                <div style={{ fontSize: 11, color: C.mid, fontFamily: C.mono, marginTop: 2 }}>
+                  {tfr.type} · {tfr.radiusNm} NM radius · {dist} NM from center{tfr.notamId ? ` · ${tfr.notamId}` : ''}
+                </div>
+                <div style={{ fontSize: 11, color: C.dim, fontFamily: C.mono, marginTop: 1 }}>
+                  {tfr.startDate || '?'}{tfr.startTime ? ` ${tfr.startTime}` : ''} → {tfr.endDate || '?'}{tfr.endTime ? ` ${tfr.endTime}` : ''} · {tfr.altLow}–{tfr.altHigh}ft
+                </div>
+              </div>
+              <button onClick={e => { e.stopPropagation(); del(tfr.id); }} style={{ background: 'none', border: 'none', color: C.red, fontSize: 14, cursor: 'pointer', padding: '0 4px', opacity: 0.6 }}>✕</button>
+            </div>
+          );
+        })}
+        {tfrs.filter(t => getTfrStatus(t) === 'expired').length > 0 && !compact && (
+          <div style={{ fontSize: 11, color: C.dim, fontFamily: C.mono, marginTop: 6, textAlign: 'center' }}>
+            {tfrs.filter(t => getTfrStatus(t) === 'expired').length} expired TFR(s) hidden
+          </div>
+        )}
+      </div>
+      <div style={{ padding: '6px 16px 10px', borderTop: `1px solid ${C.border}` }}>
+        <a href="https://tfr.faa.gov/tfr2/list.html" target="_blank" rel="noreferrer" style={{ fontSize: 11, fontFamily: C.mono, color: C.blue, textDecoration: 'none' }}>Check FAA TFRs →</a>
+        <span style={{ fontSize: 11, color: C.dim, fontFamily: C.mono, marginLeft: 8 }}>Always verify before flight</span>
+      </div>
+      {modal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setModal(false)}>
+          <div style={{ background: C.card, border: `1px solid ${C.border2}`, borderRadius: 10, padding: 24, minWidth: 420, maxWidth: 520, maxHeight: '85vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 14, fontWeight: 700, fontFamily: C.mono, color: C.red, marginBottom: 16, letterSpacing: '0.08em' }}>{editId ? 'EDIT TFR' : 'ADD TFR'}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <Field label="NOTAM ID"><input value={form.notamId} onChange={e => setForm(f => ({ ...f, notamId: e.target.value }))} placeholder="e.g. 1/2345" style={{ width: '100%' }}/></Field>
+              <Field label="Type"><select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} style={{ width: '100%' }}>{TFR_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select></Field>
+            </div>
+            <Field label="Description"><input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="TFR description…" style={{ width: '100%' }}/></Field>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+              <Field label="Center Lat"><input type="number" step="0.001" value={form.lat || ''} onChange={e => setForm(f => ({ ...f, lat: +e.target.value }))} style={{ width: '100%' }}/></Field>
+              <Field label="Center Lon"><input type="number" step="0.001" value={form.lon || ''} onChange={e => setForm(f => ({ ...f, lon: +e.target.value }))} style={{ width: '100%' }}/></Field>
+              <Field label="Radius (NM)"><input type="number" min="0.5" step="0.5" value={form.radiusNm} onChange={e => setForm(f => ({ ...f, radiusNm: +e.target.value }))} style={{ width: '100%' }}/></Field>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <Field label="Floor (ft)"><input type="number" value={form.altLow} onChange={e => setForm(f => ({ ...f, altLow: +e.target.value }))} style={{ width: '100%' }}/></Field>
+              <Field label="Ceiling (ft)"><input type="number" value={form.altHigh} onChange={e => setForm(f => ({ ...f, altHigh: +e.target.value }))} style={{ width: '100%' }}/></Field>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <Field label="Start Date"><input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} style={{ width: '100%' }}/></Field>
+              <Field label="Start Time (local)"><input type="time" value={form.startTime} onChange={e => setForm(f => ({ ...f, startTime: e.target.value }))} style={{ width: '100%' }}/></Field>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <Field label="End Date"><input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} style={{ width: '100%' }}/></Field>
+              <Field label="End Time (local)"><input type="time" value={form.endTime} onChange={e => setForm(f => ({ ...f, endTime: e.target.value }))} style={{ width: '100%' }}/></Field>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
+              <button onClick={() => setModal(false)} style={{ background: 'transparent', border: `1px solid ${C.border2}`, color: C.dim, borderRadius: 6, padding: '8px 16px', fontSize: 12, fontFamily: C.mono, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={save} style={{ background: C.red, color: '#fff', border: 'none', borderRadius: 6, padding: '8px 16px', fontSize: 12, fontFamily: C.mono, fontWeight: 600, cursor: 'pointer' }}>
+                {editId ? 'Update TFR' : 'Add TFR'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function OpsMap({ missions, onSelectMission, height = 340, tfrs }) {
   const leafletReady = useLeaflet();
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
@@ -809,17 +991,29 @@ function OpsMap({ missions, onSelectMission, height = 340 }) {
     AIRPORTS.forEach(ap => {
       const icon = L.divIcon({ className:'', html:`<div style="width:8px;height:8px;background:${C.purple}99;border:1.5px solid ${C.purple};border-radius:2px;"></div>`, iconSize:[8,8], iconAnchor:[4,4] });
       const marker = L.marker([ap.lat, ap.lon], { icon, interactive:true }).addTo(map);
-      marker.bindTooltip(`${ap.id} · Class ${ap.cls}`, { permanent:false, direction:'top', className:'', offset:[0,-6] });
+      marker.bindTooltip(`${ap.id} · Class ${ap.cls}${ap.clsExt ? ' + '+ap.clsExt+' ext' : ''}`, { permanent:false, direction:'top', className:'', offset:[0,-6] });
       markersRef.current.push(marker);
     });
+    if (tfrs) {
+      const now = new Date();
+      tfrs.forEach(tfr => {
+        if (!tfr.lat || !tfr.lon) return;
+        const st = getTfrStatus(tfr);
+        if (st === 'expired') return;
+        const col = st === 'active' ? '#EF4444' : '#F59E0B';
+        const circle = L.circle([tfr.lat, tfr.lon], { radius: (tfr.radiusNm || 3) * 1852, color: col, fillColor: col, fillOpacity: 0.12, weight: 2, dashArray: st === 'upcoming' ? '6 4' : '' }).addTo(map);
+        circle.bindPopup(`<div style="font-family:monospace;font-size:12px;line-height:1.6"><strong style="color:${col}">TFR: ${tfr.description || tfr.notamId || 'Unknown'}</strong><br/>${tfr.type} · ${tfr.radiusNm} NM<br/>${tfr.altLow}–${tfr.altHigh}ft<br/>${tfr.startDate || '?'} → ${tfr.endDate || '?'}<br/><span style="color:${col};font-weight:700">${st.toUpperCase()}</span></div>`, { className: 'dark-popup' });
+        markersRef.current.push(circle);
+      });
+    }
     if (bounds.length > 1) map.fitBounds(bounds, { padding:[30,30] });
     else if (bounds.length === 1) map.setView(bounds[0], 12);
-  }, [missions, leafletReady]);
+  }, [missions, leafletReady, tfrs]);
   if (!leafletReady) return <div style={{ height, background:C.card, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:C.mono, fontSize:13, color:C.dim, border:`1px solid ${C.border}` }}>Loading map…</div>;
   return <div ref={mapRef} style={{ height, borderRadius:8, overflow:'hidden', border:`1px solid ${C.border}` }}/>;
 }
 
-function MissionMapView({ mission, height = 280 }) {
+function MissionMapView({ mission, height = 280, tfrs }) {
   const leafletReady = useLeaflet();
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
@@ -835,15 +1029,32 @@ function MissionMapView({ mission, height = 280 }) {
     L.circle([mission.lat, mission.lon], { radius:(mission.altFt||400)*0.3048, color:sc, fillColor:sc, fillOpacity:0.08, weight:1.5, dashArray:'6 4' }).addTo(map);
     AIRPORTS.forEach(ap => {
       const nm = nmBetween(mission.lat, mission.lon, ap.lat, ap.lon);
-      if (nm <= ap.radiusNm + 5) {
+      const showDist = Math.max(ap.radiusNm, ap.extRadiusNm || 0) + 5;
+      if (nm <= showDist) {
         L.circle([ap.lat, ap.lon], { radius:ap.radiusNm*1852, color:C.purple, fillColor:C.purple, fillOpacity:0.04, weight:1, dashArray:'4 4' }).addTo(map);
-        const apIcon = L.divIcon({ className:'', html:`<div style="font-family:monospace;font-size:13px;color:${C.purple};background:${C.card}cc;padding:1px 4px;border-radius:2px;border:1px solid ${C.purple}60;white-space:nowrap">${ap.id} · ${ap.cls}</div>`, iconSize:'auto', iconAnchor:[0,0] });
+        if (ap.clsExt && ap.extRadiusNm) {
+          L.circle([ap.lat, ap.lon], { radius:ap.extRadiusNm*1852, color:C.purple, fillColor:C.purple, fillOpacity:0.02, weight:0.8, dashArray:'8 6' }).addTo(map);
+        }
+        const apIcon = L.divIcon({ className:'', html:`<div style="font-family:monospace;font-size:13px;color:${C.purple};background:${C.card}cc;padding:1px 4px;border-radius:2px;border:1px solid ${C.purple}60;white-space:nowrap">${ap.id} · ${ap.cls}${ap.clsExt ? '+'+ap.clsExt : ''}</div>`, iconSize:'auto', iconAnchor:[0,0] });
         L.marker([ap.lat, ap.lon], { icon:apIcon }).addTo(map);
       }
     });
+    if (tfrs) {
+      tfrs.forEach(tfr => {
+        if (!tfr.lat || !tfr.lon) return;
+        const st = getTfrStatus(tfr);
+        if (st === 'expired') return;
+        const nm = nmBetween(mission.lat, mission.lon, tfr.lat, tfr.lon);
+        if (nm > (tfr.radiusNm || 3) + 15) return;
+        const col = st === 'active' ? '#EF4444' : '#F59E0B';
+        L.circle([tfr.lat, tfr.lon], { radius: (tfr.radiusNm || 3) * 1852, color: col, fillColor: col, fillOpacity: 0.12, weight: 2, dashArray: st === 'upcoming' ? '6 4' : '' }).addTo(map);
+        const tIcon = L.divIcon({ className:'', html:`<div style="font-family:monospace;font-size:11px;color:${col};background:${C.card}cc;padding:1px 4px;border-radius:2px;border:1px solid ${col}60;white-space:nowrap">TFR: ${tfr.description||tfr.notamId||'?'}</div>`, iconSize:'auto', iconAnchor:[0,0] });
+        L.marker([tfr.lat, tfr.lon], { icon:tIcon }).addTo(map);
+      });
+    }
     mapInstance.current = map;
     return () => { map.remove(); mapInstance.current = null; };
-  }, [leafletReady, mission?.lat, mission?.lon, mission?.status]);
+  }, [leafletReady, mission?.lat, mission?.lon, mission?.status, tfrs]);
   if (!mission?.lat) return <Card style={{ padding:'16px', textAlign:'center' }}><span style={{ fontSize:13, color:C.dim, fontFamily:C.mono }}>No coordinates set — edit mission to add location</span></Card>;
   if (!leafletReady) return <div style={{ height, background:C.card, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:C.mono, fontSize:13, color:C.dim }}>Loading map…</div>;
   return <div ref={mapRef} style={{ height, borderRadius:8, overflow:'hidden', border:`1px solid ${C.border}`, marginBottom:12 }}/>;
@@ -1249,7 +1460,7 @@ function DashboardWeather() {
   );
 }
 
-function Dashboard({ flights, missions, aircraft, pilots, batteries, incidents, setTab }) {
+function Dashboard({ flights, missions, aircraft, pilots, batteries, incidents, setTab, tfrs, setTfrs, tfrConfig, setTfrConfig }) {
   const totHrs = flights.reduce((a, f) => a + f.durationMin / 60, 0);
   const pending = missions.filter(m => m.status==='planned' || m.status==='approved').length;
   const airworthy = aircraft.filter(a => a.status==='airworthy').length;
@@ -1320,16 +1531,19 @@ function Dashboard({ flights, missions, aircraft, pilots, batteries, incidents, 
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
         <div>
           <div style={{ fontSize:12, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:8 }}>Operations Map</div>
-          <OpsMap missions={missions} onSelectMission={id => { setTab('Missions'); }} height={380}/>
+          <OpsMap missions={missions} onSelectMission={id => { setTab('Missions'); }} height={380} tfrs={tfrs}/>
           <div style={{ display:'flex', gap:12, marginTop:8, flexWrap:'wrap' }}>
-            {[['Planned','#60A5FA'],['Approved','#10B981'],['Completed','#475569'],['Airport',C.purple]].map(([l,c]) => (
+            {[['Planned','#60A5FA'],['Approved','#10B981'],['Completed','#475569'],['Airport',C.purple],['TFR',C.red]].map(([l,c]) => (
               <div key={l} style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, fontFamily:C.mono, color:C.dim }}>
-                <div style={{ width:8, height:8, borderRadius:l==='Airport'?2:'50%', background:c }}/>{l}
+                <div style={{ width:8, height:8, borderRadius:l==='Airport'?2:'50%', background:c, border: l==='TFR' ? `1px solid ${c}` : 'none', ...(l==='TFR' ? {background:`${c}44`} : {}) }}/>{l}
               </div>
             ))}
           </div>
         </div>
         <DashboardWeather/>
+      </div>
+      <div style={{ marginTop: 12 }}>
+        <TFRPanel tfrs={tfrs} setTfrs={setTfrs} tfrConfig={tfrConfig} setTfrConfig={setTfrConfig}/>
       </div>
     </div>
   );
@@ -1407,7 +1621,7 @@ function CrewSignOff({ mission, setMissions, pilots, orgUsers, activeUser }) {
   );
 }
 
-function RiskMatrix({ mission, pilot, aircraft, activeUser, onSaveScore }) {
+function RiskMatrix({ mission, pilot, aircraft, activeUser, onSaveScore, tfrs }) {
   const [wx, setWx] = useState(null);
   const prevKey = useRef('');
   useEffect(() => {
@@ -1418,7 +1632,7 @@ function RiskMatrix({ mission, pilot, aircraft, activeUser, onSaveScore }) {
     fetchWeather(mission.lat, mission.lon).then(w => setWx(w));
   }, [mission?.lat, mission?.lon]);
   if (!mission) return null;
-  const { scores, total } = calcRisk(mission, pilot, aircraft, wx);
+  const { scores, total } = calcRisk(mission, pilot, aircraft, wx, tfrs);
   const level = getRiskLevel(total);
   const needsOverride = total >= RISK_OVERRIDE_THRESHOLD;
   const hasOverride = !!mission.riskOverride;
@@ -1561,7 +1775,7 @@ function MissionForm({ form, setForm, aircraft, pilots, orgUsers, isEdit, templa
   );
 }
 
-function MissionWorkspace({ mission, missions, setMissions, flights, setFlights, aircraft, setAircraft, pilots, setPilots, orgUsers, activeUser, addAudit, onClose }) {
+function MissionWorkspace({ mission, missions, setMissions, flights, setFlights, aircraft, setAircraft, pilots, setPilots, orgUsers, activeUser, addAudit, onClose, tfrs }) {
   const printBriefing = () => {
     const ac = aircraft.find(a => a.id === mission.aircraftId);
     const pilot = pilots.find(p => p.id === mission.pilotId);
@@ -1708,9 +1922,9 @@ function MissionWorkspace({ mission, missions, setMissions, flights, setFlights,
           {mission.lat && mission.date && <SunTimesPanel lat={mission.lat} lon={mission.lon} date={mission.date}/>}
           {mission.lat && <DensityAltitudePanel lat={mission.lat} lon={mission.lon} altFt={mission.altFt} aircraft={ac}/>}
           <div style={{ fontSize:12, fontFamily:C.mono, color:C.amber, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:8 }}>Mission Location</div>
-          <MissionMapView mission={mission}/>
+          <MissionMapView mission={mission} tfrs={tfrs}/>
           <WeatherPanel location={mission.location} lat={mission.lat} lon={mission.lon}/>
-          <AirspacePanel location={mission.location} lat={mission.lat} lon={mission.lon} altFt={mission.altFt}/>
+          <AirspacePanel location={mission.location} lat={mission.lat} lon={mission.lon} altFt={mission.altFt} tfrs={tfrs}/>
         </div>
       )}
 
@@ -1726,7 +1940,7 @@ function MissionWorkspace({ mission, missions, setMissions, flights, setFlights,
               {allDone && pfStarted && <Btn variant='teal' onClick={()=>printPreFlight(mission,ac,pilot,CHECKLIST,pfChecked,mission.notams||'')}>Print PDF</Btn>}
             </div>
           </Card>
-          <RiskMatrix mission={mission} pilot={pilot} aircraft={ac} activeUser={activeUser} onSaveScore={saveRiskScore}/>
+          <RiskMatrix mission={mission} pilot={pilot} aircraft={ac} activeUser={activeUser} onSaveScore={saveRiskScore} tfrs={tfrs}/>
           {pfStarted && (
             <div>
               <div style={{ marginBottom:14 }}>
@@ -1849,7 +2063,7 @@ function ConflictBadge({ mission, missions, flights }) {
   return (<span style={{ fontSize: 9, fontFamily: C.mono, color: C.red, background: `${C.red}18`, border: `1px solid ${C.red}44`, borderRadius: 3, padding: '1px 6px', fontWeight: 700, letterSpacing: '0.05em' }} title={conflicts.map(c => c.msg).join('\n')}>⚠ {conflicts.length} CONFLICT{conflicts.length > 1 ? 'S' : ''}</span>);
 }
 
-function Missions({ missions, setMissions, aircraft, setAircraft, pilots, setPilots, orgUsers, flights, setFlights, activeUser, addAudit, templates, setTemplates, openNewRef, viewRef, openMissionRef }) {
+function Missions({ missions, setMissions, aircraft, setAircraft, pilots, setPilots, orgUsers, flights, setFlights, activeUser, addAudit, templates, setTemplates, openNewRef, viewRef, openMissionRef, tfrs }) {
   const canCreate = can(activeUser,'createMission'), canEdit = can(activeUser,'editMission'), canDelete = can(activeUser,'deleteMission');
   const canLog = can(activeUser,'logFlight'), canExport = can(activeUser,'exportData');
   const [workMissionId, setWorkMissionId] = useState(null);
@@ -1889,7 +2103,7 @@ function Missions({ missions, setMissions, aircraft, setAircraft, pilots, setPil
     <div style={{ position:'relative' }}>
       {confirmEl}
       {workMissionId && workMission && (
-        <MissionWorkspace mission={workMission} missions={missions} setMissions={setMissions} flights={flights} setFlights={setFlights} aircraft={aircraft} setAircraft={setAircraft} pilots={pilots} setPilots={setPilots} orgUsers={orgUsers} activeUser={activeUser} addAudit={addAudit} onClose={()=>setWorkMissionId(null)}/>
+        <MissionWorkspace mission={workMission} missions={missions} setMissions={setMissions} flights={flights} setFlights={setFlights} aircraft={aircraft} setAircraft={setAircraft} pilots={pilots} setPilots={setPilots} orgUsers={orgUsers} activeUser={activeUser} addAudit={addAudit} onClose={()=>setWorkMissionId(null)} tfrs={tfrs}/>
       )}
       {!workMissionId && (
         <div>
@@ -2554,6 +2768,8 @@ export default function App() {
   const [activeUserId, setActiveUserId] = useState(null);
   const [auditLog, setAuditLog] = useState([]);
   const [templates, setTemplates] = useState([]);
+  const [tfrs, setTfrs] = useState([]);
+  const [tfrConfig, setTfrConfig] = useState(DEFAULT_TFR_CONFIG);
   const [ready, setReady] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -2591,6 +2807,9 @@ export default function App() {
       setActiveUserId(savedActiveId?.id || SEED_ORG_USERS[0].id);
       setAuditLog((await store.get('uas:audit')) || []);
       setTemplates((await store.get('uas:templates')) || []);
+      setTfrs(migrate(await store.get('uas:tfrs'), migrateTfr) || []);
+      const savedTfrConfig = await store.get('uas:tfrConfig');
+      if (savedTfrConfig) setTfrConfig(c => ({ ...DEFAULT_TFR_CONFIG, ...savedTfrConfig }));
       setReady(true);
     })();
   }, []);
@@ -2613,6 +2832,8 @@ export default function App() {
   useEffect(() => { if (ready) store.set('uas:activeUserId', { id:activeUserId }); }, [activeUserId, ready]);
   useEffect(() => { if (ready) store.set('uas:audit', auditLog); }, [auditLog, ready]);
   useEffect(() => { if (ready) store.set('uas:templates', templates); }, [templates, ready]);
+  useEffect(() => { if (ready) store.set('uas:tfrs', tfrs); }, [tfrs, ready]);
+  useEffect(() => { if (ready) store.set('uas:tfrConfig', tfrConfig); }, [tfrConfig, ready]);
 
   if (!ready) return (<div style={{ background:C.bg, minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:C.mono, color:C.dim, fontSize:13, letterSpacing:'0.1em' }}>INITIALIZING EWEB UAS OPS…</div>);
 
@@ -2690,7 +2911,7 @@ export default function App() {
               </div>
             )}
           </div>
-          <NotificationBell notifications={buildNotifications(aircraft, pilots, batteries, incidents, missions, flights)} onSelectTab={setTab}/>
+          <NotificationBell notifications={buildNotifications(aircraft, pilots, batteries, incidents, missions, flights, tfrs, tfrConfig)} onSelectTab={setTab}/>
           <div style={{ display:'flex', alignItems:'center', gap:6 }}><div style={{ width:6, height:6, borderRadius:'50%', background:C.green, boxShadow:`0 0 5px ${C.green}` }}/><span style={{ fontSize:12, color:C.dim, fontFamily:C.mono }}>ONLINE</span></div>
           <span style={{ fontSize:12, color:C.dim, fontFamily:C.mono }}>{TODAY} · {timeStr}</span>
         </div>
@@ -2699,8 +2920,8 @@ export default function App() {
         {TABS.map(t => { const col = TAB_COL[t] || C.amber; return (<button key={t} onClick={() => setTab(t)} style={{ background:'none', border:'none', padding:'12px 13px', fontSize:12, fontFamily:C.mono, letterSpacing:'0.07em', whiteSpace:'nowrap', color:tab===t?col:C.dim, borderBottom:tab===t?`2px solid ${col}`:'2px solid transparent', marginBottom:-1, textTransform:'uppercase' }}>{t}</button>); })}
       </nav>
       <main style={{ padding:'24px', maxWidth:1200, margin:'0 auto' }}>
-        {tab==='Dashboard' && <ErrorBoundary tab="Dashboard"><Dashboard flights={flights} missions={missions} aircraft={aircraft} pilots={pilots} batteries={batteries} incidents={incidents} setTab={setTab}/></ErrorBoundary>}
-        {tab==='Missions' && <ErrorBoundary tab="Missions"><Missions missions={missions} setMissions={setMissions} aircraft={aircraft} setAircraft={setAircraft} pilots={pilots} setPilots={setPilots} orgUsers={orgUsers} flights={flights} setFlights={setFlights} activeUser={activeUser} addAudit={addAudit} templates={templates} setTemplates={setTemplates} openNewRef={missionsOpenNewRef} viewRef={missionsViewRef} openMissionRef={missionsOpenRef}/></ErrorBoundary>}
+        {tab==='Dashboard' && <ErrorBoundary tab="Dashboard"><Dashboard flights={flights} missions={missions} aircraft={aircraft} pilots={pilots} batteries={batteries} incidents={incidents} setTab={setTab} tfrs={tfrs} setTfrs={setTfrs} tfrConfig={tfrConfig} setTfrConfig={setTfrConfig}/></ErrorBoundary>}
+        {tab==='Missions' && <ErrorBoundary tab="Missions"><Missions missions={missions} setMissions={setMissions} aircraft={aircraft} setAircraft={setAircraft} pilots={pilots} setPilots={setPilots} orgUsers={orgUsers} flights={flights} setFlights={setFlights} activeUser={activeUser} addAudit={addAudit} templates={templates} setTemplates={setTemplates} openNewRef={missionsOpenNewRef} viewRef={missionsViewRef} openMissionRef={missionsOpenRef} tfrs={tfrs}/></ErrorBoundary>}
         {tab==='Assets' && <ErrorBoundary tab="Assets"><Assets aircraft={aircraft} setAircraft={setAircraft} batteries={batteries} setBatteries={setBatteries} equipment={equipment} setEquipment={setEquipment} pilots={pilots} setPilots={setPilots} flights={flights} activeUser={activeUser} addAudit={addAudit}/></ErrorBoundary>}
         {tab==='Analytics' && <ErrorBoundary tab="Analytics"><Analytics flights={flights} aircraft={aircraft} pilots={pilots} missions={missions} activeUser={activeUser}/></ErrorBoundary>}
         {tab==='Incidents' && <ErrorBoundary tab="Incidents"><Incidents incidents={incidents} setIncidents={setIncidents} aircraft={aircraft} pilots={pilots} activeUser={activeUser}/></ErrorBoundary>}
