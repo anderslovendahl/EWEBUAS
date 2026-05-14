@@ -243,6 +243,71 @@ const getTfrsInRadius = (tfrs, lat, lon, radiusNm) => {
   });
 };
 
+const parseFAATfr = (raw) => {
+  if (!raw || typeof raw !== 'object') return null;
+  const lat = parseFloat(raw.lat ?? raw.latitude ?? raw.center_lat ?? raw.centerLat ?? raw.coordLatitude);
+  const lon = parseFloat(raw.lon ?? raw.lng ?? raw.longitude ?? raw.center_lon ?? raw.centerLon ?? raw.coordLongitude);
+  if (isNaN(lat) || isNaN(lon)) return null;
+  const notamId = String(raw.notam_id || raw.notamId || raw.notam || raw.id || '').trim();
+  const parseDateTime = (v) => {
+    if (!v) return { d:'', t:'' };
+    const s = String(v);
+    const m = s.match(/(\d{4}-\d{2}-\d{2})[T ]?(\d{2}:\d{2})?/);
+    if (m) return { d: m[1], t: m[2] || '' };
+    const dt = new Date(s);
+    if (!isNaN(dt)) return { d: dt.toISOString().split('T')[0], t: dt.toISOString().split('T')[1].slice(0,5) };
+    return { d:'', t:'' };
+  };
+  const start = parseDateTime(raw.start_time || raw.startTime || raw.startDate || raw.effectiveStart);
+  const end = parseDateTime(raw.end_time || raw.endTime || raw.endDate || raw.effectiveEnd);
+  const desc = raw.name || raw.description || raw.account_id || raw.accountId || raw.subject || '';
+  return {
+    id: 'faa_' + (notamId || `${lat.toFixed(3)}_${lon.toFixed(3)}_${start.d}`),
+    notamId,
+    type: raw.type || raw.account_id || raw.accountId || 'Other',
+    description: String(desc).slice(0, 200) || 'FAA TFR',
+    lat, lon,
+    radiusNm: parseFloat(raw.radius_nm || raw.radiusNm || raw.radius || 3) || 3,
+    altLow: parseInt(raw.alt_low || raw.altLow || raw.minAltitude || 0) || 0,
+    altHigh: parseInt(raw.alt_high || raw.altHigh || raw.maxAltitude || 18000) || 18000,
+    startDate: start.d, startTime: start.t,
+    endDate: end.d, endTime: end.t,
+    source: 'faa',
+  };
+};
+
+const FAA_PROXIES = [
+  'https://corsproxy.io/?',
+  'https://api.allorigins.win/raw?url=',
+  'https://api.codetabs.com/v1/proxy?quest=',
+];
+const FAA_TFR_ENDPOINTS = [
+  'https://tfr.faa.gov/tfrapi/exportTfrList',
+  'https://tfr.faa.gov/tfr_map/list/active',
+];
+
+const fetchFAATfrs = async () => {
+  let lastErr = null;
+  for (const endpoint of FAA_TFR_ENDPOINTS) {
+    for (const proxy of FAA_PROXIES) {
+      try {
+        const url = proxy + encodeURIComponent(endpoint);
+        const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        if (!r.ok) { lastErr = new Error(`HTTP ${r.status}`); continue; }
+        const text = await r.text();
+        let data;
+        try { data = JSON.parse(text); }
+        catch (e) { lastErr = new Error('Invalid JSON from FAA'); continue; }
+        const arr = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : (Array.isArray(data?.tfrs) ? data.tfrs : null));
+        if (!arr) { lastErr = new Error('Unexpected FAA response shape'); continue; }
+        const parsed = arr.map(parseFAATfr).filter(Boolean);
+        return parsed;
+      } catch (e) { lastErr = e; }
+    }
+  }
+  throw lastErr || new Error('All FAA proxy attempts failed');
+};
+
 const checkScheduleConflicts = (mission, allMissions, allFlights) => {
   if (!mission.aircraftId || !mission.date) return [];
   const conflicts = [];
@@ -828,6 +893,7 @@ function AirspacePanel({ location, lat, lon, altFt, tfrs }) {
 function TFRPanel({ tfrs, setTfrs, tfrConfig, setTfrConfig, compact }) {
   const [modal, setModal] = useState(false), [form, setForm] = useState(TFR_BLANK), [editId, setEditId] = useState(null);
   const [configOpen, setConfigOpen] = useState(false), [locInput, setLocInput] = useState(tfrConfig.locationName || '');
+  const [syncing, setSyncing] = useState(false), [syncMsg, setSyncMsg] = useState(null), [lastSync, setLastSync] = useState(null);
   const activeTfrs = getActiveTfrs(tfrs);
   const monitored = getTfrsInRadius(activeTfrs, tfrConfig.lat, tfrConfig.lon, tfrConfig.radiusNm);
   const openNew = () => { setForm({ ...TFR_BLANK }); setEditId(null); setModal(true); };
@@ -844,6 +910,24 @@ function TFRPanel({ tfrs, setTfrs, tfrConfig, setTfrConfig, compact }) {
     const g = await geocode(locInput);
     if (g) setTfrConfig(c => ({ ...c, lat: g.lat, lon: g.lon, locationName: locInput }));
   };
+  const syncFAA = async () => {
+    setSyncing(true); setSyncMsg(null);
+    try {
+      const fetched = await fetchFAATfrs();
+      const inRange = getTfrsInRadius(fetched, tfrConfig.lat, tfrConfig.lon, tfrConfig.radiusNm);
+      setTfrs(ts => {
+        const manual = ts.filter(t => t.source !== 'faa');
+        const existingFaaIds = new Set(ts.filter(t => t.source === 'faa').map(t => t.id));
+        const merged = [...manual, ...fetched];
+        return merged;
+      });
+      setLastSync(new Date());
+      setSyncMsg({ ok: true, msg: `Fetched ${fetched.length} TFRs from FAA (${inRange.length} in range)` });
+    } catch (e) {
+      setSyncMsg({ ok: false, msg: `FAA sync failed: ${e.message}. The FAA doesn't expose a CORS-friendly public API — use the FAA TFR link below and add active TFRs manually.` });
+    }
+    setSyncing(false);
+  };
   const statusCol = { active: C.red, upcoming: C.amber, expired: C.dim };
   const statusLabel = { active: 'ACTIVE', upcoming: 'UPCOMING', expired: 'EXPIRED' };
   return (
@@ -858,10 +942,17 @@ function TFRPanel({ tfrs, setTfrs, tfrConfig, setTfrConfig, compact }) {
           )}
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
+          <button onClick={syncFAA} disabled={syncing} style={{ background: 'transparent', border: `1px solid ${C.blue}`, color: C.blue, borderRadius: 4, padding: '3px 8px', fontSize: 11, fontFamily: C.mono, cursor: syncing ? 'wait' : 'pointer', opacity: syncing ? 0.6 : 1 }}>{syncing ? 'Syncing…' : 'Sync FAA'}</button>
           <button onClick={() => setConfigOpen(o => !o)} style={{ background: 'transparent', border: `1px solid ${C.border2}`, color: C.dim, borderRadius: 4, padding: '3px 8px', fontSize: 11, fontFamily: C.mono, cursor: 'pointer' }}>{configOpen ? 'Close' : 'Config'}</button>
           <button onClick={openNew} style={{ background: 'transparent', border: `1px solid ${C.red}`, color: C.red, borderRadius: 4, padding: '3px 8px', fontSize: 11, fontFamily: C.mono, cursor: 'pointer' }}>+ Add TFR</button>
         </div>
       </div>
+      {syncMsg && (
+        <div style={{ padding: '8px 16px', borderBottom: `1px solid ${C.border}`, background: syncMsg.ok ? `${C.green}10` : `${C.amber}10`, fontSize: 11, fontFamily: C.mono, color: syncMsg.ok ? C.green : C.amber, lineHeight: 1.5 }}>
+          {syncMsg.msg}
+          <button onClick={() => setSyncMsg(null)} style={{ marginLeft: 8, background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', opacity: 0.6 }}>✕</button>
+        </div>
+      )}
       {configOpen && (
         <div style={{ padding: '12px 16px', borderBottom: `1px solid ${C.border}`, background: `${C.card2}` }}>
           <div style={{ fontSize: 11, color: C.dim, fontFamily: C.mono, marginBottom: 8, letterSpacing: '0.08em' }}>MONITORING CENTER</div>
@@ -881,8 +972,11 @@ function TFRPanel({ tfrs, setTfrs, tfrConfig, setTfrConfig, compact }) {
       )}
       <div style={{ padding: compact ? '8px 12px' : '10px 16px' }}>
         {monitored.length === 0 && (
-          <div style={{ fontSize: 12, color: C.dim, fontFamily: C.mono, padding: '8px 0', textAlign: 'center' }}>
-            No active TFRs within {tfrConfig.radiusNm} NM of {tfrConfig.locationName || 'monitoring center'}
+          <div style={{ fontSize: 12, color: C.dim, fontFamily: C.mono, padding: '12px 8px', textAlign: 'center', lineHeight: 1.6 }}>
+            <div style={{ color: C.mid, marginBottom: 6 }}>No active TFRs within {tfrConfig.radiusNm} NM of {tfrConfig.locationName || 'monitoring center'}</div>
+            <div style={{ fontSize: 11, color: C.dim }}>
+              Try <strong>Sync FAA</strong> to auto-fetch via public proxy, or use <strong>+ Add TFR</strong> to log manually from the FAA TFR site.
+            </div>
           </div>
         )}
         {monitored.map(tfr => {
@@ -914,9 +1008,15 @@ function TFRPanel({ tfrs, setTfrs, tfrConfig, setTfrConfig, compact }) {
           </div>
         )}
       </div>
-      <div style={{ padding: '6px 16px 10px', borderTop: `1px solid ${C.border}` }}>
-        <a href="https://tfr.faa.gov/tfr2/list.html" target="_blank" rel="noreferrer" style={{ fontSize: 11, fontFamily: C.mono, color: C.blue, textDecoration: 'none' }}>Check FAA TFRs →</a>
-        <span style={{ fontSize: 11, color: C.dim, fontFamily: C.mono, marginLeft: 8 }}>Always verify before flight</span>
+      <div style={{ padding: '8px 16px 10px', borderTop: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+        <div>
+          <a href="https://tfr.faa.gov/tfr2/list.html" target="_blank" rel="noreferrer" style={{ fontSize: 11, fontFamily: C.mono, color: C.blue, textDecoration: 'none' }}>Check FAA TFR list →</a>
+          <span style={{ fontSize: 11, color: C.dim, fontFamily: C.mono, marginLeft: 10 }}>·</span>
+          <a href="https://uasdoc.faa.gov" target="_blank" rel="noreferrer" style={{ fontSize: 11, fontFamily: C.mono, color: C.blue, textDecoration: 'none', marginLeft: 10 }}>LAANC →</a>
+        </div>
+        <span style={{ fontSize: 11, color: C.dim, fontFamily: C.mono }}>
+          {tfrs.length} TFR(s) tracked{lastSync ? ` · synced ${lastSync.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}` : ''}
+        </span>
       </div>
       {modal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setModal(false)}>
